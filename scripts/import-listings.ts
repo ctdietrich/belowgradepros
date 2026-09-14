@@ -114,7 +114,7 @@ export function runSelfTests() {
   const csv = `name,city,state,metro,services,description,email,website,published,claimable
 "Bayou Grade Foundation Co. (Sample)",Houston,TX,Houston,"foundation_repair, slab","Houston clay-soil sample.","desk@example.com",https://example.com/bayou,candidate,yes
 Plano CrawlSpace Seal,Plano,TX,Dallas,"encapsulation; waterproofing",,plano@example.com,example.com/plano,ready,true
-Draft Barrier,Chicago,IL,Chicago,waterproofing,"Hold for photos.",not-an-email,,,draft,
+Draft Barrier,Chicago,IL,Chicago,waterproofing,"Hold for photos.",not-an-email,,draft,
 `;
   const { rows } = parseCsv(csv);
   if (rows.length !== 3) throw new Error(`expected 3 rows, got ${rows.length}`);
