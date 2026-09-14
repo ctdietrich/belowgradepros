@@ -127,21 +127,23 @@ export const WAVE1_HUBS = [
     state: "TN",
     region: "Mid-South",
     title: "Memphis Foundation Repair & Crawl Encapsulation",
+    h1: "Memphis foundation repair and crawl space contractors",
     foundationTitle: "Memphis Foundation Repair Contractors",
     encapsulationTitle: "Memphis Crawl Space Encapsulation Contractors",
     description:
-      "Find foundation repair and crawl space encapsulation contractors in Memphis. Settling, cracks, musty crawl. Inquire on BelowGradePros.",
+      "Memphis foundation repair and crawl space encapsulation contractors. Settling, cracks, musty crawl. Inquire on BelowGradePros.",
   },
   {
     slug: "birmingham",
     name: "Birmingham",
     state: "AL",
     region: "Southeast",
-    title: "Birmingham Foundation Repair & Crawl Encapsulation",
+    title: "Birmingham Crawl Space Encapsulation & Foundation",
+    h1: "Birmingham crawl space encapsulation and foundation contractors",
     foundationTitle: "Birmingham Foundation Repair Contractors",
     encapsulationTitle: "Birmingham Crawl Space Encapsulation Contractors",
     description:
-      "Birmingham foundation repair and crawl space encapsulation contractors. Clay soils, settling, musty crawl spaces. Inquire on BelowGradePros.",
+      "Birmingham crawl space encapsulation and foundation repair. Musty crawl, settling, cracks. Inquire on BelowGradePros.",
   },
   {
     slug: "oklahoma-city",
@@ -149,32 +151,35 @@ export const WAVE1_HUBS = [
     state: "OK",
     region: "Oklahoma",
     title: "Oklahoma City Foundation Repair Contractors",
+    h1: "Oklahoma City foundation repair contractors",
     foundationTitle: "Oklahoma City Foundation Repair Contractors",
     encapsulationTitle: "Oklahoma City Crawl Space Encapsulation Contractors",
     description:
-      "Oklahoma City foundation repair contractors for clay soils, settling cracks, and pier & beam. Compare specialists on BelowGradePros.",
+      "Oklahoma City foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros.",
   },
   {
     slug: "greenville-sc",
-    name: "Greenville",
+    name: "Greenville, SC",
     state: "SC",
     region: "Carolinas",
-    title: "Greenville Foundation Repair & Crawl Encapsulation",
-    foundationTitle: "Greenville Foundation Repair Contractors",
-    encapsulationTitle: "Greenville Crawl Space Encapsulation Contractors",
+    title: "Greenville SC Crawl Space Encapsulation & Foundation",
+    h1: "Greenville, SC crawl space encapsulation and foundation contractors",
+    foundationTitle: "Greenville, SC Foundation Repair Contractors",
+    encapsulationTitle: "Greenville, SC Crawl Space Encapsulation Contractors",
     description:
-      "Greenville, SC foundation repair and crawl space encapsulation contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
+      "Greenville, SC crawl space encapsulation and foundation repair. Musty crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "raleigh",
     name: "Raleigh",
     state: "NC",
     region: "Carolinas",
-    title: "Raleigh Crawl Space Encapsulation & Foundation",
+    title: "Raleigh Foundation Repair & Crawl Encapsulation",
+    h1: "Raleigh foundation repair and crawl space contractors",
     foundationTitle: "Raleigh Foundation Repair Contractors",
     encapsulationTitle: "Raleigh Crawl Space Encapsulation Contractors",
     description:
-      "Raleigh crawl space encapsulation and foundation repair contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
+      "Raleigh foundation repair and crawl space encapsulation. Clay soils, settling, musty crawl. Inquire on BelowGradePros.",
   },
   {
     slug: "tulsa",
@@ -182,10 +187,11 @@ export const WAVE1_HUBS = [
     state: "OK",
     region: "Oklahoma",
     title: "Tulsa Foundation Repair Contractors",
+    h1: "Tulsa foundation repair contractors",
     foundationTitle: "Tulsa Foundation Repair Contractors",
     encapsulationTitle: "Tulsa Crawl Space Encapsulation Contractors",
     description:
-      "Tulsa foundation repair for cracks, settling, and clay soils. Compare Oklahoma foundation specialists on BelowGradePros.",
+      "Tulsa foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros.",
   },
   {
     slug: "charleston-sc",
@@ -354,7 +360,7 @@ export function hubPageDescription(slug: string, fallback?: string | null) {
   return getWave1Hub(slug)?.description ?? fallback ?? "";
 }
 
-/** Specialty-directory title for a hub, including `?service=foundation-repair|encapsulation`. */
+/** Document title / meta title. Brand suffix comes from the root layout template only. */
 export function hubPageTitle(slug: string, service?: "foundation" | "encapsulation" | null) {
   const hub = getWave1Hub(slug);
   if (hub) {
@@ -369,6 +375,14 @@ export function hubPageTitle(slug: string, service?: "foundation" | "encapsulati
   if (service === "foundation") return `${fallback} Foundation Repair Contractors`;
   if (service === "encapsulation") return `${fallback} Crawl Space Encapsulation Contractors`;
   return `${fallback} Foundation Repair & Crawl Encapsulation`;
+}
+
+/** Visible H1. Uses a distinct `h1` string when SEO locked it separately from `title`. */
+export function hubPageHeading(slug: string, service?: "foundation" | "encapsulation" | null) {
+  if (service) return hubPageTitle(slug, service);
+  const hub = getWave1Hub(slug);
+  if (hub && "h1" in hub && hub.h1) return hub.h1;
+  return hubPageTitle(slug);
 }
 
 export function homepageCardHref(slug: string) {

@@ -30,8 +30,11 @@ import {
   WAVE1_HUB_SLUGS,
   catalogCardChips,
   catalogCardHref,
+  getWave1Hub,
   homepageCardChips,
   homepageCardHref,
+  hubPageDescription,
+  hubPageHeading,
   hubPageTitle,
 } from "../src/lib/hubs";
 
@@ -307,25 +310,82 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
     }
   }
   if (hubPageTitle("memphis") !== "Memphis Foundation Repair & Crawl Encapsulation") {
-    throw new Error("Memphis hub title should be both-lean");
+    throw new Error("Memphis hub title must match SEO Wave 1c");
   }
-  if (hubPageTitle("birmingham") !== "Birmingham Foundation Repair & Crawl Encapsulation") {
-    throw new Error("Birmingham hub title should be both-lean");
+  if (hubPageHeading("memphis") !== "Memphis foundation repair and crawl space contractors") {
+    throw new Error("Memphis H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("memphis") !==
+    "Memphis foundation repair and crawl space encapsulation contractors. Settling, cracks, musty crawl. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Memphis meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("birmingham") !== "Birmingham Crawl Space Encapsulation & Foundation") {
+    throw new Error("Birmingham hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("birmingham") !== "Birmingham crawl space encapsulation and foundation contractors") {
+    throw new Error("Birmingham H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("birmingham") !==
+    "Birmingham crawl space encapsulation and foundation repair. Musty crawl, settling, cracks. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Birmingham meta description must match SEO Wave 1c");
   }
   if (hubPageTitle("oklahoma-city") !== "Oklahoma City Foundation Repair Contractors") {
-    throw new Error("Oklahoma City hub title should be foundation-heavy");
+    throw new Error("Oklahoma City hub title must match SEO Wave 1c");
   }
-  if (hubPageTitle("greenville-sc") !== "Greenville Foundation Repair & Crawl Encapsulation") {
-    throw new Error("Greenville SC hub title should be both-lean");
+  if (hubPageHeading("oklahoma-city") !== "Oklahoma City foundation repair contractors") {
+    throw new Error("Oklahoma City H1 must match SEO Wave 1c");
   }
-  if (hubPageTitle("raleigh") !== "Raleigh Crawl Space Encapsulation & Foundation") {
-    throw new Error("Raleigh hub title should be encapsulation-heavy");
+  if (
+    hubPageDescription("oklahoma-city") !==
+    "Oklahoma City foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros."
+  ) {
+    throw new Error("Oklahoma City meta description must match SEO Wave 1c");
+  }
+  if (getWave1Hub("greenville-sc")?.name !== "Greenville, SC") {
+    throw new Error("Greenville display name must be Greenville, SC");
+  }
+  if (hubPageTitle("greenville-sc") !== "Greenville SC Crawl Space Encapsulation & Foundation") {
+    throw new Error("Greenville SC hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("greenville-sc") !== "Greenville, SC crawl space encapsulation and foundation contractors") {
+    throw new Error("Greenville SC H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("greenville-sc") !==
+    "Greenville, SC crawl space encapsulation and foundation repair. Musty crawl, settling. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Greenville SC meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("raleigh") !== "Raleigh Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Raleigh hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("raleigh") !== "Raleigh foundation repair and crawl space contractors") {
+    throw new Error("Raleigh H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("raleigh") !==
+    "Raleigh foundation repair and crawl space encapsulation. Clay soils, settling, musty crawl. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Raleigh meta description must match SEO Wave 1c");
   }
   if (hubPageTitle("tulsa") !== "Tulsa Foundation Repair Contractors") {
-    throw new Error("Tulsa hub title should be foundation-heavy");
+    throw new Error("Tulsa hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("tulsa") !== "Tulsa foundation repair contractors") {
+    throw new Error("Tulsa H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("tulsa") !==
+    "Tulsa foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros."
+  ) {
+    throw new Error("Tulsa meta description must match SEO Wave 1c");
   }
   if (hubPageTitle("charleston-sc") !== "Charleston Crawl Space Encapsulation & Foundation") {
-    throw new Error("Charleston SC hub title should be encapsulation-heavy");
+    throw new Error("Charleston SC hub title should stay specialty-directory interim");
   }
   if (HOMEPAGE_SERVICE_CHIPS[0]?.href !== "/cities/tampa?service=encapsulation") {
     throw new Error("Encapsulation chip must target Tampa encapsulation");

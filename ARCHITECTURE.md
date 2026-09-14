@@ -60,11 +60,11 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/cities/austin` | Wave 1 hub (kept; not in primary homepage strip) |
 | `/cities/st-louis` | Wave 1 hub (kept; not in primary homepage strip) |
 | `/cities/memphis` | Wave 1 hub (kept; not in primary homepage strip); both |
-| `/cities/birmingham` | Wave 1 hub (kept; not in primary homepage strip); both |
-| `/cities/oklahoma-city` | Wave 1 hub (kept; not in primary homepage strip); foundation-heavy |
-| `/cities/greenville-sc` | Wave 1 hub (kept; not in primary homepage strip); both |
-| `/cities/raleigh` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-heavy |
-| `/cities/tulsa` | Wave 1 hub (kept; not in primary homepage strip); foundation-heavy |
+| `/cities/birmingham` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean |
+| `/cities/oklahoma-city` | Wave 1 hub (kept; not in primary homepage strip); foundation-lean |
+| `/cities/greenville-sc` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean; display name `Greenville, SC` |
+| `/cities/raleigh` | Wave 1 hub (kept; not in primary homepage strip); both |
+| `/cities/tulsa` | Wave 1 hub (kept; not in primary homepage strip); foundation-lean |
 | `/cities/charleston-sc` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-heavy (`charleston-sc`, not `charleston`) |
 | `/cities/tallahassee` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy; catalog card defaults to encapsulation |
 | `/cities/pensacola` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |

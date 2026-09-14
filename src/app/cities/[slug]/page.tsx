@@ -11,7 +11,15 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
-import { buildCityIndex, catalogCardChips, catalogCardCta, catalogCardHref, hubPageDescription, hubPageTitle } from "@/lib/hubs";
+import {
+  buildCityIndex,
+  catalogCardChips,
+  catalogCardCta,
+  catalogCardHref,
+  hubPageDescription,
+  hubPageHeading,
+  hubPageTitle,
+} from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -56,7 +64,7 @@ export default async function CityDetailPage({
     service: serviceFilter ?? undefined,
   });
   const others = buildCityIndex(await getCities()).filter((item) => item.slug !== city.slug);
-  const heading = hubPageTitle(city.slug, serviceFilter);
+  const heading = hubPageHeading(city.slug, serviceFilter);
 
   return (
     <main>

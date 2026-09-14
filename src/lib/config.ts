@@ -64,6 +64,7 @@ export {
   HOMEPAGE_SERVICE_CHIPS,
   getWave1Hub,
   hubPageTitle,
+  hubPageHeading,
   homepageCardHref,
   homepageCardCta,
   homepageCardChips,
