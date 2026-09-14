@@ -2,26 +2,30 @@
 
 import { useActionState } from "react";
 import { saveListing, type ActionState } from "@/app/actions";
-import { SERVICES } from "@/lib/config";
-import { listingServices } from "@/lib/listings";
-import type { Listing, Metro } from "@prisma/client";
+import { site } from "@/lib/config";
+import { asStringArray } from "@/lib/listings";
+import type { City, Listing } from "@prisma/client";
 
 const field =
   "mt-1 w-full rounded-lg border border-slate/15 bg-white px-3 py-2 outline-none focus:border-amber";
 
+type ListingWithIds = Listing & { cities: { cityId: string }[] };
+
 export function ListingForm({
   listing,
-  metros,
+  cities,
 }: {
-  listing?: Listing;
-  metros: Metro[];
+  listing?: ListingWithIds;
+  cities: City[];
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(saveListing, null);
-  const selected = new Set(listing ? listingServices(listing) : []);
+  const selected = new Set(listing?.cities.map((item) => item.cityId) ?? []);
+  const selectedServices = new Set(asStringArray(listing?.services));
 
   return (
     <form action={action} className="space-y-5">
       {listing ? <input type="hidden" name="id" value={listing.id} /> : null}
+      <input type="hidden" name="type" value="contractor" />
       <div className="grid gap-4 md:grid-cols-2">
         <label className="text-sm">
           Name
@@ -32,82 +36,125 @@ export function ListingForm({
           <input name="slug" defaultValue={listing?.slug} className={field} />
         </label>
         <label className="text-sm">
-          City
-          <input name="city" required defaultValue={listing?.city} className={field} />
+          Status
+          <select name="status" defaultValue={listing?.status ?? "draft"} className={field}>
+            <option value="draft">draft — hidden from the directory</option>
+            <option value="published">published</option>
+          </select>
         </label>
         <label className="text-sm">
-          State
-          <input name="state" required defaultValue={listing?.state} className={field} />
-        </label>
-        <label className="text-sm">
-          Metro label
-          <input name="metro" defaultValue={listing?.metro} className={field} />
-        </label>
-        <label className="text-sm">
-          Metro hub
-          <select name="metroSlug" required defaultValue={listing?.metroSlug} className={field}>
-            <option value="">Select a hub</option>
-            {metros.map((metro) => (
-              <option key={metro.id} value={metro.slug}>
-                {metro.name} ({metro.stateCode})
+          Primary service
+          <select
+            name="primaryService"
+            defaultValue={listing?.primaryService ?? "foundation"}
+            className={field}
+          >
+            {site.primaryServices.map((service) => (
+              <option key={service.key} value={service.key}>
+                {service.label}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm">
-          Phone
-          <input name="phone" defaultValue={listing?.phone ?? ""} className={field} />
+          License ID
+          <input name="licenseId" defaultValue={listing?.licenseId ?? ""} className={field} />
+        </label>
+        <label className="text-sm md:col-span-2">
+          Tagline
+          <input name="tagline" defaultValue={listing?.tagline ?? ""} className={field} />
+        </label>
+        <label className="text-sm md:col-span-2">
+          Bio
+          <textarea name="bio" required rows={6} defaultValue={listing?.bio} className={field} />
+        </label>
+        <label className="text-sm">
+          Contact email
+          <input
+            name="contactEmail"
+            type="email"
+            required
+            defaultValue={listing?.contactEmail}
+            className={field}
+          />
         </label>
         <label className="text-sm">
           Website
           <input name="website" defaultValue={listing?.website ?? ""} className={field} />
         </label>
         <label className="text-sm">
-          Email
-          <input name="email" type="email" defaultValue={listing?.email ?? ""} className={field} />
+          Phone
+          <input name="phone" defaultValue={listing?.phone ?? ""} className={field} />
         </label>
         <label className="text-sm">
           Source URL
           <input name="sourceUrl" defaultValue={listing?.sourceUrl ?? ""} className={field} />
         </label>
+        <label className="text-sm">
+          Home city
+          <input name="homeCity" defaultValue={listing?.homeCity ?? ""} className={field} />
+        </label>
+        <label className="text-sm">
+          Home state
+          <input name="homeState" defaultValue={listing?.homeState ?? ""} className={field} />
+        </label>
         <label className="text-sm md:col-span-2">
-          Description
+          Photos (comma-separated URLs)
           <textarea
-            name="description"
-            required
-            rows={6}
-            defaultValue={listing?.description}
+            name="photos"
+            rows={3}
+            defaultValue={asStringArray(listing?.photos).join(", ")}
             className={field}
           />
         </label>
       </div>
       <fieldset>
-        <legend className="text-xs uppercase tracking-[0.16em] text-muted">Services</legend>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {SERVICES.map((service) => (
+        <legend className="text-sm">Additional badges</legend>
+        <div className="mt-2 grid gap-2 md:grid-cols-2">
+          {site.additionalServices.map((service) => (
             <label key={service.key} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                name="services"
+                name="serviceKeys"
                 value={service.key}
-                defaultChecked={selected.has(service.key)}
+                defaultChecked={selectedServices.has(service.key)}
               />
               {service.label}
             </label>
           ))}
         </div>
       </fieldset>
+      <fieldset>
+        <legend className="text-sm">City hubs</legend>
+        <div className="mt-2 grid gap-2 md:grid-cols-2">
+          {cities.map((city) => (
+            <label key={city.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="cityIds"
+                value={city.id}
+                defaultChecked={selected.has(city.id)}
+              />
+              {city.name}, {city.state}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="flex flex-wrap gap-5 text-sm">
         <label className="flex items-center gap-2">
-          <input name="published" type="checkbox" defaultChecked={listing?.published ?? false} />
-          Published
-        </label>
-        <label className="flex items-center gap-2">
-          <input name="featured" type="checkbox" defaultChecked={listing?.featured ?? false} />
+          <input type="checkbox" name="featured" defaultChecked={listing?.featured} />
           Featured
         </label>
         <label className="flex items-center gap-2">
-          <input name="claimable" type="checkbox" defaultChecked={listing?.claimable ?? true} />
+          <input type="checkbox" name="founding" defaultChecked={listing?.founding} />
+          Founding
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="verified" defaultChecked={listing?.verified} />
+          Verified
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="claimable" defaultChecked={listing?.claimable ?? true} />
           Claimable
         </label>
       </div>
@@ -115,9 +162,9 @@ export function ListingForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-slate-deep px-5 py-2.5 text-sm text-paper hover:bg-slate disabled:opacity-60"
+        className="rounded-full bg-slate px-5 py-2.5 text-sm text-page disabled:opacity-60"
       >
-        {pending ? "Saving…" : listing ? "Save listing" : "Create listing"}
+        {pending ? "Saving…" : "Save listing"}
       </button>
     </form>
   );

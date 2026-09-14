@@ -1,82 +1,72 @@
-import { SERVICES } from "@/lib/config";
+import { hubServiceQueryParam, site } from "@/lib/config";
 
-type MetroOption = { slug: string; name: string };
-type StateOption = { state: string; stateCode: string };
+type CityOption = { slug: string; name: string };
 
 export function FilterBar({
   action,
-  metros,
-  states,
+  cities,
   current,
+  hideCity = false,
 }: {
   action: string;
-  metros: MetroOption[];
-  states: StateOption[];
-  current: { q?: string; metro?: string; state?: string; service?: string };
+  cities: CityOption[];
+  current: { q?: string; city?: string; service?: string };
+  hideCity?: boolean;
 }) {
   return (
     <form
       action={action}
-      className="grid gap-3 rounded-2xl border border-slate/10 bg-white p-4 md:grid-cols-5"
+      className={`grid gap-3 rounded-2xl border border-slate/10 bg-white p-4 ${
+        hideCity ? "md:grid-cols-3" : "md:grid-cols-4"
+      }`}
     >
       <label className="text-sm">
         <span className="mb-1 block text-xs uppercase tracking-[0.16em] text-muted">Search</span>
         <input
           name="q"
           defaultValue={current.q}
-          placeholder="Company or city"
-          className="w-full rounded-lg border border-slate/15 bg-paper px-3 py-2 outline-none focus:border-amber"
+          placeholder="Name or metro"
+          className="w-full rounded-lg border border-slate/15 bg-page px-3 py-2 outline-none focus:border-amber"
         />
       </label>
-      <label className="text-sm">
-        <span className="mb-1 block text-xs uppercase tracking-[0.16em] text-muted">Metro</span>
-        <select
-          name="metro"
-          defaultValue={current.metro ?? ""}
-          className="w-full rounded-lg border border-slate/15 bg-paper px-3 py-2 outline-none focus:border-amber"
-        >
-          <option value="">All metros</option>
-          {metros.map((metro) => (
-            <option key={metro.slug} value={metro.slug}>
-              {metro.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="text-sm">
-        <span className="mb-1 block text-xs uppercase tracking-[0.16em] text-muted">State</span>
-        <select
-          name="state"
-          defaultValue={current.state ?? ""}
-          className="w-full rounded-lg border border-slate/15 bg-paper px-3 py-2 outline-none focus:border-amber"
-        >
-          <option value="">All states</option>
-          {states.map((item) => (
-            <option key={item.stateCode} value={item.stateCode}>
-              {item.state} ({item.stateCode})
-            </option>
-          ))}
-        </select>
-      </label>
+      {hideCity ? null : (
+        <label className="text-sm">
+          <span className="mb-1 block text-xs uppercase tracking-[0.16em] text-muted">City hub</span>
+          <select
+            name="city"
+            defaultValue={current.city ?? ""}
+            className="w-full rounded-lg border border-slate/15 bg-page px-3 py-2 outline-none focus:border-amber"
+          >
+            <option value="">All metros</option>
+            {cities.map((city) => (
+              <option key={city.slug} value={city.slug}>
+                {city.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="text-sm">
         <span className="mb-1 block text-xs uppercase tracking-[0.16em] text-muted">Service</span>
         <select
           name="service"
-          defaultValue={current.service ?? ""}
-          className="w-full rounded-lg border border-slate/15 bg-paper px-3 py-2 outline-none focus:border-amber"
+          defaultValue={hubServiceQueryParam(current.service) ?? current.service ?? ""}
+          className="w-full rounded-lg border border-slate/15 bg-page px-3 py-2 outline-none focus:border-amber"
         >
           <option value="">All services</option>
-          {SERVICES.map((service) => (
-            <option key={service.key} value={service.key}>
-              {service.label}
-            </option>
-          ))}
+          {site.primaryServices
+            .filter((item) => item.key !== "both")
+            .map((item) => (
+              <option key={item.query} value={item.query}>
+                {item.label}
+              </option>
+            ))}
         </select>
       </label>
       <div className="flex items-end">
         <button
           type="submit"
-          className="w-full rounded-lg bg-slate-deep px-4 py-2.5 text-sm text-paper hover:bg-slate"
+          className="w-full rounded-lg bg-slate px-4 py-2.5 text-sm text-page hover:bg-slate-soft"
         >
           Filter
         </button>

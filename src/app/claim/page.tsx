@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { submitClaim } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
+import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
-import { getClaimableListings } from "@/lib/listings";
+import { getClaimableListings, resolveClaimableListing } from "@/lib/listings";
+import { foundingPriceLabel } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -21,23 +23,25 @@ export default async function ClaimPage({
 }) {
   const { listing: selected } = await searchParams;
   const listings = await getClaimableListings();
+  // Growth/ops deep links use slug: /claim?listing={slug}. Cuid id still works.
+  const preselected = await resolveClaimableListing(selected);
 
   return (
     <main>
       <PageHero
         kicker="Operators"
         title="Claim a listing"
-        lede="Some profiles were sourced from public materials and remain claimable. Tell us who you are. Founding listings will be $199–299/mo when paid placement opens — claiming is free inquiry for now."
+        lede="Some profiles were sourced from public materials and remain claimable. Tell us who you are and we will move the listing under your desk."
       />
-      <section className="mx-auto max-w-2xl px-5 py-12">
+      <section className="mx-auto max-w-2xl space-y-8 px-5 py-12">
         <ActionForm action={submitClaim} className="space-y-5" submitLabel="Request claim">
           <label className="block text-sm">
             Listing
-            <select name="listingId" required defaultValue={selected ?? ""} className={field}>
+            <select name="listingId" required defaultValue={preselected?.id ?? ""} className={field}>
               <option value="">Select a claimable profile</option>
               {listings.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} — {item.city}, {item.state}
+                  {item.name}
                 </option>
               ))}
             </select>
@@ -54,7 +58,12 @@ export default async function ClaimPage({
             How are you connected?
             <textarea name="message" required rows={5} className={field} />
           </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input name="founding" type="checkbox" className="mt-1" />
+            <span>Also interested in a founding / featured upgrade ({foundingPriceLabel()})</span>
+          </label>
         </ActionForm>
+        <FoundingCta source="claim" />
       </section>
     </main>
   );

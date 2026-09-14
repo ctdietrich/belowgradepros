@@ -1,4 +1,5 @@
-// BelowGradePros contractor directory (PostgreSQL via DATABASE_URL).
+// BelowGradePros listing directory (PostgreSQL via DATABASE_URL).
+// Cloned from the FishTheFlats directory kit; Destination → City, species → services.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,41 +10,57 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Metro {
-  id          String    @id @default(cuid())
-  slug        String    @unique
+/// Metro hub (FTF Destination). US national, Wave 1 metros first.
+model City {
+  id          String        @id @default(cuid())
+  slug        String        @unique
   name        String
   state       String
-  stateCode   String
+  region      String
   description String
-  listings    Listing[]
+  heroImage   String?
+  sortOrder   Int           @default(0)
+  listings    ListingCity[]
 }
 
 model Listing {
-  id          String         @id @default(cuid())
-  slug        String         @unique
-  name        String
-  city        String
-  state       String
-  metro       String
-  metroSlug   String
-  metroHub    Metro          @relation(fields: [metroSlug], references: [slug])
-  phone       String?
-  website     String?
-  email       String?
-  services    Json
-  description String
-  sourceUrl   String?
-  published   Boolean        @default(false)
-  featured    Boolean        @default(false)
-  claimable   Boolean        @default(true)
-  claimedAt   DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  claims      ClaimRequest[]
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  type           String         @default("contractor")
+  name           String
+  tagline        String?
+  bio            String
+  contactEmail   String
+  website        String?
+  phone          String?
+  homeCity       String?
+  homeState      String?
+  licenseId      String?
+  photos         Json
+  /// foundation | encapsulation | both
+  primaryService String         @default("foundation")
+  /// Additional badges: waterproofing, pier_beam, slab
+  services       Json
+  featured       Boolean        @default(false)
+  founding       Boolean        @default(false)
+  verified       Boolean        @default(false)
+  status         String         @default("draft")
+  sourceUrl      String?
+  claimable      Boolean        @default(true)
+  claimedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  cities         ListingCity[]
+  claims         ClaimRequest[]
+}
 
-  @@index([published, metroSlug])
-  @@index([state])
+model ListingCity {
+  listingId String
+  cityId    String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  city      City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, cityId])
 }
 
 model ClaimRequest {
@@ -53,21 +70,22 @@ model ClaimRequest {
   name      String
   email     String
   message   String
+  founding  Boolean  @default(false)
   status    String   @default("pending")
   createdAt DateTime @default(now())
 }
 
 model Submission {
-  id          String   @id @default(cuid())
-  name        String
-  email       String
-  website     String?
-  phone       String?
-  city        String
-  state       String
-  metro       String
-  services    String
-  description String
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  type           String
+  name           String
+  email          String
+  website        String?
+  cities         String
+  primaryService String   @default("foundation")
+  services       String
+  bio            String
+  founding       Boolean  @default(false)
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
 }

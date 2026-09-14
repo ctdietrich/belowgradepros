@@ -1,29 +1,33 @@
 @import "tailwindcss";
 
+/* Brand lock — slate #1E293B / deep #0F172A, concrete #C9B8A6, amber #D97706, page #F7F4F0 */
 :root {
   --slate: #1e293b;
   --slate-deep: #0f172a;
-  --slate-soft: #334155;
+  --concrete: #c9b8a6;
   --amber: #d97706;
-  --amber-bright: #f59e0b;
-  --amber-soft: #fde68a;
-  --paper: #f8fafc;
-  --paper-warm: #f4f1ea;
+  --page: #f7f4f0;
+
+  --slate-soft: #334155;
+  --concrete-light: #e4d9cc;
+  --amber-deep: #b45309;
+  --page-light: #fbfaf7;
   --muted: #64748b;
-  --line: #e2e8f0;
 }
 
 @theme inline {
   --color-slate: var(--slate);
   --color-slate-deep: var(--slate-deep);
   --color-slate-soft: var(--slate-soft);
+  --color-concrete: var(--concrete);
+  --color-concrete-light: var(--concrete-light);
   --color-amber: var(--amber);
-  --color-amber-bright: var(--amber-bright);
-  --color-amber-soft: var(--amber-soft);
-  --color-paper: var(--paper);
-  --color-paper-warm: var(--paper-warm);
+  --color-amber-deep: var(--amber-deep);
+  --color-page: var(--page);
+  --color-page-light: var(--page-light);
   --color-muted: var(--muted);
-  --color-line: var(--line);
+  --color-ink: var(--slate);
+  --color-paper: var(--page);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
@@ -34,8 +38,8 @@ html {
 }
 
 body {
-  background: var(--paper);
-  color: var(--slate-deep);
+  background: var(--page);
+  color: var(--slate);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 

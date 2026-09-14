@@ -1,8 +1,11 @@
-import type { Listing, Metro, Prisma } from "@prisma/client";
+import type { City, Listing, Prisma } from "@prisma/client";
+import { matchesPrimaryFilter, normalizeAdditionalService } from "./config";
+import { publishedListingWhere } from "./listing-status";
 import { prisma } from "./prisma";
-import { normalizeServiceKey } from "./config";
 
-export type ListingWithMetro = Listing & { metroHub: Metro };
+export type ListingWithCities = Listing & {
+  cities: { city: City }[];
+};
 
 export function asStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -24,93 +27,89 @@ export function asStringArray(value: unknown): string[] {
   return [];
 }
 
-export function listingServices(listing: Pick<Listing, "services">) {
+export function listingCover(listing: Pick<Listing, "photos">) {
+  return asStringArray(listing.photos)[0] ?? null;
+}
+
+export function listingBadges(listing: Pick<Listing, "services">) {
   return asStringArray(listing.services);
 }
 
-const published: Prisma.ListingWhereInput = { published: true };
+export function listingServices(listing: Pick<Listing, "services">) {
+  return listingBadges(listing);
+}
+
+const published = publishedListingWhere;
 
 export async function getPublishedListings(filters?: {
-  metroSlug?: string;
-  state?: string;
+  type?: string;
+  citySlug?: string;
   service?: string;
   query?: string;
   featured?: boolean;
 }) {
   const where: Prisma.ListingWhereInput = { ...published };
 
-  if (filters?.metroSlug) where.metroSlug = filters.metroSlug;
-  if (filters?.state) {
-    where.OR = [
-      { state: { equals: filters.state, mode: "insensitive" } },
-      { metroHub: { stateCode: { equals: filters.state, mode: "insensitive" } } },
-    ];
-  }
+  if (filters?.type) where.type = filters.type;
   if (filters?.featured) where.featured = true;
-  if (filters?.query) {
-    const queryFilter: Prisma.ListingWhereInput = {
-      OR: [
-        { name: { contains: filters.query, mode: "insensitive" } },
-        { city: { contains: filters.query, mode: "insensitive" } },
-        { metro: { contains: filters.query, mode: "insensitive" } },
-        { description: { contains: filters.query, mode: "insensitive" } },
-      ],
+  if (filters?.citySlug) {
+    where.cities = {
+      some: { city: { slug: filters.citySlug } },
     };
-    where.AND = [queryFilter];
+  }
+  if (filters?.query) {
+    where.OR = [
+      { name: { contains: filters.query, mode: "insensitive" } },
+      { tagline: { contains: filters.query, mode: "insensitive" } },
+      { bio: { contains: filters.query, mode: "insensitive" } },
+      { homeCity: { contains: filters.query, mode: "insensitive" } },
+    ];
   }
 
   const listings = await prisma.listing.findMany({
     where,
-    include: { metroHub: true },
-    orderBy: [{ featured: "desc" }, { name: "asc" }],
+    include: { cities: { include: { city: true } } },
+    orderBy: [{ founding: "desc" }, { featured: "desc" }, { name: "asc" }],
   });
 
   if (!filters?.service) return listings;
 
-  const needle = normalizeServiceKey(filters.service) ?? filters.service.toLowerCase();
-  return listings.filter((listing) =>
-    listingServices(listing).some((item) => {
-      const key = normalizeServiceKey(item) ?? item.toLowerCase();
-      return key === needle;
-    }),
-  );
+  return listings.filter((listing) => {
+    if (matchesPrimaryFilter(listing.primaryService, filters.service)) return true;
+    const badge = normalizeAdditionalService(filters.service ?? "");
+    if (!badge) return false;
+    return listingBadges(listing).some((item) => normalizeAdditionalService(item) === badge);
+  });
 }
 
-export async function getListingBySlug(slug: string, includeUnpublished = false) {
+export async function getListingBySlug(slug: string, includeDraft = false) {
   return prisma.listing.findFirst({
-    where: includeUnpublished ? { slug } : { slug, ...published },
-    include: { metroHub: true },
+    where: includeDraft ? { slug } : { slug, ...published },
+    include: { cities: { include: { city: true } } },
   });
 }
 
-export async function getMetros() {
-  return prisma.metro.findMany({
+export async function getCities() {
+  return prisma.city.findMany({
     include: {
-      listings: { where: published },
+      listings: {
+        where: { listing: published },
+        include: { listing: true },
+      },
     },
-    orderBy: { name: "asc" },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
 }
 
-export async function getMetroBySlug(slug: string) {
-  return prisma.metro.findUnique({
+export async function getCityBySlug(slug: string) {
+  return prisma.city.findUnique({
     where: { slug },
     include: {
-      listings: { where: published },
+      listings: {
+        where: { listing: published },
+        include: { listing: true },
+      },
     },
-  });
-}
-
-export async function getStates() {
-  const metros = await prisma.metro.findMany({
-    select: { state: true, stateCode: true },
-    orderBy: { state: "asc" },
-  });
-  const seen = new Set<string>();
-  return metros.filter((metro) => {
-    if (seen.has(metro.stateCode)) return false;
-    seen.add(metro.stateCode);
-    return true;
   });
 }
 
@@ -118,6 +117,14 @@ export async function getClaimableListings() {
   return prisma.listing.findMany({
     where: { claimable: true, ...published },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, city: true, state: true, slug: true },
+    select: { id: true, name: true, type: true, slug: true },
   });
+}
+
+/** Public deep link: `/claim?listing={slug}` (preferred) or `/claim?listing={id}`. Drafts never match. */
+export async function resolveClaimableListing(ref?: string | null) {
+  const value = ref?.trim();
+  if (!value) return null;
+  const listings = await getClaimableListings();
+  return listings.find((item) => item.id === value || item.slug === value) ?? null;
 }

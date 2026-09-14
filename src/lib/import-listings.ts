@@ -4,32 +4,52 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { normalizeServiceKey, serviceLabel } from "./config";
+import {
+  normalizeAdditionalService,
+  normalizePrimaryService,
+  normalizeServiceKey,
+  type AdditionalServiceKey,
+  type PrimaryServiceKey,
+} from "./config";
+import { isRejectListingStatus, normalizeListingStatus } from "./listing-status";
+
+export type ListingType = "contractor";
 
 export type MappedListing = {
   slug: string;
   slugFromCsv: boolean;
+  type: ListingType;
   name: string;
-  city: string;
-  state: string;
-  metro: string;
-  metroSlugHint?: string;
-  phone: string | null;
+  tagline: string | null;
+  bio: string;
+  contactEmail: string;
   website: string | null;
-  email: string | null;
-  services: string[];
-  description: string;
-  sourceUrl: string | null;
-  published: boolean;
+  phone: string | null;
+  homeCity: string | null;
+  homeState: string | null;
+  licenseId: string | null;
+  photos: string[];
+  primaryService: PrimaryServiceKey;
+  services: AdditionalServiceKey[];
   featured: boolean;
+  founding: boolean;
+  verified: boolean;
+  status: "published" | "draft";
+  sourceUrl: string | null;
   claimable: boolean;
+  cityNames: string[];
+  metroSlugFromCsv: boolean;
+  region?: string;
+  notes?: string;
+  photoPolicy?: string;
+  growthFlag?: string;
   warnings: string[];
 };
 
 export type ImportListingsOptions = {
   dryRun?: boolean;
   insertOnly?: boolean;
-  createMetros?: boolean;
+  createCities?: boolean;
   prisma?: PrismaClient | null;
   log?: (message: string) => void;
 };
@@ -43,71 +63,64 @@ export type ImportResult = {
   total: number;
 };
 
-const NAME_KEYS = ["name", "listing", "listing_name", "business", "business_name", "title", "company"];
-const CITY_KEYS = ["city", "town"];
-const STATE_KEYS = ["state", "st", "state_code"];
-const METRO_KEYS = ["metro", "metro_name", "market", "msa"];
-const METRO_SLUG_KEYS = ["metro_slug", "hub", "hub_slug"];
-const EMAIL_KEYS = ["email", "contact_email", "contactemail"];
+const NAME_KEYS = ["name", "listing", "listing_name", "business", "business_name", "title", "operator", "contractor"];
+const TYPE_KEYS = ["type", "listing_type", "kind", "category", "operator_type"];
+const METRO_KEYS = ["metro", "metros", "hub", "city_hub", "destination", "destinations", "dest", "location", "place"];
+const METRO_SLUG_KEYS = ["metro_slug", "metroslug", "city_slug", "hub_slug"];
+const CITY_KEYS = ["city", "home_city", "locality"];
+const STATE_KEYS = ["state", "home_state", "st"];
+const SERVICE_KEYS_CSV = ["services", "service", "service_flags", "flags", "species"];
+const BIO_KEYS = ["bio", "description", "about", "blurb", "summary", "writeup"];
+const EMAIL_KEYS = ["contact_email", "contactemail", "email", "e_mail"];
+const CONTACT_KEYS = ["contact"];
 const WEBSITE_KEYS = ["website", "url", "web", "site", "homepage"];
 const PHONE_KEYS = ["phone", "telephone", "tel", "mobile"];
 const SOURCE_KEYS = ["source_url", "sourceurl", "source", "sourced_from", "attribution"];
-const STATUS_KEYS = ["published", "status", "publish_status", "listing_status"];
+const STATUS_KEYS = ["status", "publish_status", "listing_status"];
+const NOTES_KEYS = ["notes", "note", "internal_notes", "ops_notes"];
 const CLAIMABLE_KEYS = ["claimable", "claim", "can_claim"];
+const GROWTH_FLAG_KEYS = ["growth_flag", "growthflag", "growth", "flags_ops"];
+const PHOTO_POLICY_KEYS = ["photo_policy", "photopolicy"];
+const PRIMARY_KEYS = ["primary", "primary_service", "focus", "desk"];
+const FOUNDING_KEYS = ["founding", "founding_listing", "paid"];
 const FEATURED_KEYS = ["featured", "feature", "hero"];
+const VERIFIED_KEYS = ["verified", "verify"];
 const SLUG_KEYS = ["slug", "permalink", "handle"];
-const DESC_KEYS = ["description", "bio", "about", "blurb", "summary"];
-const SERVICE_KEYS = ["services", "service", "service_flags", "categories"];
+const TAGLINE_KEYS = ["tagline", "subtitle", "headline"];
+const PHOTOS_KEYS = ["photos", "photo", "images", "image", "photo_urls"];
+const REGION_KEYS = ["region", "area"];
+const LICENSE_KEYS = ["license_id", "licenseid", "license", "license_no", "license_number"];
 
-export const METRO_ALIASES: Record<string, string> = {
+/** Common ops-folder names → seed slugs. */
+export const CITY_ALIASES: Record<string, string> = {
   houston: "houston",
   "houston tx": "houston",
   "greater houston": "houston",
-  dallas: "dallas",
-  dfw: "dallas",
-  "dallas fort worth": "dallas",
-  "dallas-fort worth": "dallas",
-  "fort worth": "dallas",
+  "dallas fort worth": "dallas-fort-worth",
+  dallas: "dallas-fort-worth",
+  dfw: "dallas-fort-worth",
+  "fort worth": "dallas-fort-worth",
+  "dallas tx": "dallas-fort-worth",
   atlanta: "atlanta",
   "atlanta ga": "atlanta",
   "metro atlanta": "atlanta",
   tampa: "tampa",
-  "tampa bay": "tampa",
   "tampa fl": "tampa",
+  "tampa bay": "tampa",
   "st petersburg": "tampa",
+  "saint petersburg": "tampa",
   chicago: "chicago",
   "chicago il": "chicago",
   "chicagoland": "chicago",
+  charlotte: "charlotte",
+  "charlotte nc": "charlotte",
+  clt: "charlotte",
+  austin: "austin",
+  "austin tx": "austin",
+  "st louis": "st-louis",
+  "saint louis": "st-louis",
+  "st louis mo": "st-louis",
 };
-
-const PUBLISHED_ALIASES = new Set([
-  "published",
-  "publish",
-  "live",
-  "public",
-  "ready",
-  "candidate",
-  "approved",
-  "active",
-  "true",
-  "1",
-  "yes",
-  "y",
-]);
-
-const UNPUBLISHED_ALIASES = new Set([
-  "draft",
-  "pending",
-  "unpublished",
-  "hidden",
-  "review",
-  "wip",
-  "hold",
-  "false",
-  "0",
-  "no",
-  "n",
-]);
 
 export const MAX_IMPORT_CSV_BYTES = 2 * 1024 * 1024;
 
@@ -239,14 +252,6 @@ export function parseBoolean(value: string, fallback: boolean) {
   return fallback;
 }
 
-export function parsePublished(value: string, fallback = true) {
-  if (!value) return fallback;
-  const normalized = value.trim().toLowerCase();
-  if (PUBLISHED_ALIASES.has(normalized)) return true;
-  if (UNPUBLISHED_ALIASES.has(normalized)) return false;
-  return fallback;
-}
-
 export function parseList(value: string) {
   if (!value) return [];
   try {
@@ -267,6 +272,53 @@ export function parseList(value: string) {
     .filter(Boolean);
 }
 
+export function inferListingType(raw: string): ListingType {
+  const value = raw.trim().toLowerCase();
+  if (value && value !== "contractor") {
+    /* single-type directory; ignore unknown type labels */
+  }
+  return "contractor";
+}
+
+export function parseServices(value: string): {
+  primaryHints: PrimaryServiceKey[];
+  services: AdditionalServiceKey[];
+  unknown: string[];
+} {
+  const unknown: string[] = [];
+  const primaryHints: PrimaryServiceKey[] = [];
+  const services: AdditionalServiceKey[] = [];
+  for (const item of parseList(value)) {
+    const primary = normalizePrimaryService(item);
+    if (primary) {
+      if (!primaryHints.includes(primary)) primaryHints.push(primary);
+      continue;
+    }
+    const badge = normalizeAdditionalService(item);
+    if (badge) {
+      if (!services.includes(badge)) services.push(badge);
+    } else if (normalizeServiceKey(item)) {
+      /* already handled */
+    } else {
+      unknown.push(item);
+    }
+  }
+  return { primaryHints, services, unknown };
+}
+
+export function inferPrimaryService(
+  explicit: string,
+  hints: PrimaryServiceKey[],
+): PrimaryServiceKey {
+  const fromField = normalizePrimaryService(explicit);
+  if (fromField) return fromField;
+  const hasFoundation = hints.includes("foundation") || hints.includes("both");
+  const hasEncap = hints.includes("encapsulation") || hints.includes("both");
+  if (hints.includes("both") || (hasFoundation && hasEncap)) return "both";
+  if (hasEncap) return "encapsulation";
+  return "foundation";
+}
+
 function looksLikeEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
@@ -280,14 +332,23 @@ function normalizeWebsite(value: string) {
   return trimmed;
 }
 
-export function parseServices(value: string) {
-  const raw = parseList(value);
-  const services: string[] = [];
-  for (const item of raw) {
-    const key = normalizeServiceKey(item);
-    if (key && !services.includes(key)) services.push(key);
+export function splitMetros(value: string): string[] {
+  if (!value) return [];
+  const full = value.trim();
+  if (CITY_ALIASES[normalizePlace(full)]) return [full];
+
+  const primary = full
+    .split(/\s*;\s*|\s*\|\s*|\s+&\s+|\s+and\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (primary.length > 1) return primary;
+
+  const comma = full.split(",").map((part) => part.trim()).filter(Boolean);
+  if (comma.length > 1 && comma.every((part) => part.length < 48)) {
+    const places = comma.filter((part) => !/^(tx|fl|ga|il|nc|mo|texas|florida|georgia|illinois|missouri|us|usa)$/i.test(part));
+    return places.length ? places : [full];
   }
-  return services;
+  return [full];
 }
 
 export function mapRow(row: Record<string, string>, index: number): MappedListing | { error: string } {
@@ -295,135 +356,178 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   const name = getField(row, NAME_KEYS);
   if (!name) return { error: `Row ${index + 2}: missing name` };
 
+  const type = inferListingType(getField(row, TYPE_KEYS));
   const csvSlug = getField(row, SLUG_KEYS);
   const slug = slugify(csvSlug || name);
   if (!slug) return { error: `Row ${index + 2}: could not build a slug for "${name}"` };
 
-  const city = getField(row, CITY_KEYS);
-  const state = getField(row, STATE_KEYS);
-  const metro = getField(row, METRO_KEYS) || city;
-  if (!city) warnings.push(`No city for "${name}"`);
-  if (!state) warnings.push(`No state for "${name}"`);
-  if (!metro) warnings.push(`No metro for "${name}"`);
+  const metroSlug = getField(row, METRO_SLUG_KEYS);
+  const metroValue = getField(row, METRO_KEYS);
+  const homeCity = getField(row, CITY_KEYS) || null;
+  const homeState = getField(row, STATE_KEYS) || null;
+  const metroSlugFromCsv = Boolean(metroSlug);
+  const cityNames = metroSlug
+    ? parseList(metroSlug).flatMap((item) => splitMetros(item))
+    : splitMetros(metroValue || homeCity || "");
+  if (!cityNames.length) warnings.push(`No metro for "${name}"`);
+  const photoPolicy = getField(row, PHOTO_POLICY_KEYS) || undefined;
+  const growthFlag = getField(row, GROWTH_FLAG_KEYS);
 
-  const services = parseServices(getField(row, SERVICE_KEYS));
-  if (!services.length) warnings.push(`No recognized services for "${name}"`);
+  const notes = getField(row, NOTES_KEYS);
+  const tagline = getField(row, TAGLINE_KEYS) || notes || null;
+  const { primaryHints, services, unknown } = parseServices(getField(row, SERVICE_KEYS_CSV));
+  const primaryService = inferPrimaryService(getField(row, PRIMARY_KEYS), primaryHints);
+  if (unknown.length) warnings.push(`Unknown services for "${name}": ${unknown.join(", ")}`);
 
-  const description =
-    getField(row, DESC_KEYS) ||
-    `${name} is a sample below-grade contractor${city ? ` in ${city}` : ""}${state ? `, ${state}` : ""}.`;
-  if (!getField(row, DESC_KEYS)) warnings.push(`Generated description for "${name}"`);
+  const photos = parseList(getField(row, PHOTOS_KEYS));
+  const bio =
+    getField(row, BIO_KEYS) ||
+    notes ||
+    `${name} is a foundation and encapsulation contractor${cityNames[0] ? ` in ${cityNames[0]}` : ""}.`;
+
+  if (!getField(row, BIO_KEYS)) warnings.push(`Generated bio for "${name}"`);
 
   const emailField = getField(row, EMAIL_KEYS);
-  let email: string | null = null;
-  if (looksLikeEmail(emailField)) email = emailField.toLowerCase();
+  const contactField = getField(row, CONTACT_KEYS);
+  let contactEmail = "";
+  if (looksLikeEmail(emailField)) contactEmail = emailField.toLowerCase();
+  else if (looksLikeEmail(contactField)) contactEmail = contactField.toLowerCase();
   else if (emailField) warnings.push(`Ignored invalid email "${emailField}"`);
 
-  if (!email) {
-    email = `${slug.replace(/-/g, ".")}@example.com`;
-    warnings.push(`No contact email for "${name}"; using ${email}`);
+  if (!contactEmail) {
+    contactEmail = `${slug.replace(/-/g, ".")}@example.com`;
+    warnings.push(`No contact email for "${name}"; using ${contactEmail}`);
   }
 
   const website = normalizeWebsite(getField(row, WEBSITE_KEYS));
   const sourceUrl = normalizeWebsite(getField(row, SOURCE_KEYS)) || website;
+  const phone = getField(row, PHONE_KEYS) || (!looksLikeEmail(contactField) ? contactField : "") || null;
+  const licenseId = getField(row, LICENSE_KEYS) || null;
+  const rawStatus = getField(row, STATUS_KEYS);
+  const status = normalizeListingStatus(rawStatus, "draft");
+  const growthTokens = parseList(growthFlag).map((item) => item.trim().toLowerCase());
+  const growthClaimable = growthTokens.some((item) => item === "claimable" || item === "claim");
+  const claimable = isRejectListingStatus(rawStatus)
+    ? true
+    : growthClaimable || parseBoolean(getField(row, CLAIMABLE_KEYS), true);
 
   return {
     slug,
     slugFromCsv: Boolean(csvSlug),
+    type,
     name,
-    city: city || metro || "Unknown",
-    state: state || "US",
-    metro: metro || city || "Unknown",
-    metroSlugHint: getField(row, METRO_SLUG_KEYS) || undefined,
-    phone: getField(row, PHONE_KEYS) || null,
+    tagline,
+    bio,
+    contactEmail,
     website,
-    email,
+    phone,
+    homeCity,
+    homeState,
+    licenseId,
+    photos,
+    primaryService,
     services,
-    description,
-    sourceUrl,
-    published: parsePublished(getField(row, STATUS_KEYS), true),
     featured: parseBoolean(getField(row, FEATURED_KEYS), false),
-    claimable: parseBoolean(getField(row, CLAIMABLE_KEYS), true),
+    founding: parseBoolean(getField(row, FOUNDING_KEYS), false),
+    verified: parseBoolean(getField(row, VERIFIED_KEYS), false),
+    status,
+    sourceUrl,
+    claimable,
+    cityNames,
+    metroSlugFromCsv,
+    region: getField(row, REGION_KEYS) || undefined,
+    notes: notes || undefined,
+    photoPolicy,
+    growthFlag: growthFlag || undefined,
     warnings,
   };
 }
 
-type MetroRecord = { id: string; slug: string; name: string; state: string; stateCode: string };
+type CityRecord = { id: string; slug: string; name: string };
 
-export function matchMetro(name: string, metros: MetroRecord[]): MetroRecord | undefined {
+export function matchCity(name: string, cities: CityRecord[]): CityRecord | undefined {
+  const raw = name.trim();
+  if (!raw) return undefined;
+  const slugNeedle = raw.toLowerCase();
+  const bySlug = cities.find((city) => city.slug === slugNeedle);
+  if (bySlug) return bySlug;
+
   const needle = normalizePlace(name);
   if (!needle) return undefined;
 
-  const aliasSlug = METRO_ALIASES[needle];
+  const aliasSlug = CITY_ALIASES[needle];
   if (aliasSlug) {
-    const byAlias = metros.find((metro) => metro.slug === aliasSlug);
+    const byAlias = cities.find((city) => city.slug === aliasSlug);
     if (byAlias) return byAlias;
   }
 
-  return metros.find((metro) => {
-    const slug = normalizePlace(metro.slug.replace(/-/g, " "));
-    const label = normalizePlace(metro.name);
-    return slug === needle || label === needle || slug.includes(needle) || needle.includes(slug);
+  return cities.find((city) => {
+    const slug = normalizePlace(city.slug.replace(/-/g, " "));
+    const label = normalizePlace(city.name);
+    return slug === needle || label === needle;
   });
 }
 
-async function resolveMetro(
+async function resolveCity(
   prisma: PrismaClient | null,
-  cache: MetroRecord[],
+  cache: CityRecord[],
   listing: MappedListing,
-  createMetros: boolean,
+  name: string,
+  createCities: boolean,
   dryRun: boolean,
 ) {
-  const hint = listing.metroSlugHint ? matchMetro(listing.metroSlugHint, cache) : undefined;
-  if (hint) return hint;
-  const existing = matchMetro(listing.metro, cache) || matchMetro(listing.city, cache);
+  const existing = matchCity(name, cache);
   if (existing) return existing;
-  if (!createMetros) return undefined;
+  if (!createCities) return undefined;
 
-  const slug = METRO_ALIASES[normalizePlace(listing.metro)] || slugify(listing.metro);
-  const already = cache.find((metro) => metro.slug === slug);
+  const slug = CITY_ALIASES[normalizePlace(name)] || slugify(name);
+  const already = cache.find((city) => city.slug === slug);
   if (already) return already;
   if (dryRun || !prisma) {
     const preview = {
       id: `dry-${slug}`,
       slug,
-      name: listing.metro,
-      state: listing.state,
-      stateCode: listing.state.slice(0, 2).toUpperCase(),
+      name,
     };
     cache.push(preview);
     return preview;
   }
 
-  const created = await prisma.metro.create({
+  const created = await prisma.city.create({
     data: {
       slug,
-      name: listing.metro,
-      state: listing.state,
-      stateCode: listing.state.length === 2 ? listing.state.toUpperCase() : listing.state.slice(0, 2).toUpperCase(),
-      description: `${listing.metro} — added from listing import.`,
+      name,
+      state: listing.homeState || "US",
+      region: listing.region || listing.homeState || name,
+      description: `${name} — added from listing import.`,
+      sortOrder: 99,
     },
-    select: { id: true, slug: true, name: true, state: true, stateCode: true },
+    select: { id: true, slug: true, name: true },
   });
   cache.push(created);
   return created;
 }
 
-function listingFields(listing: MappedListing, metro: MetroRecord) {
+function listingFields(listing: MappedListing) {
   return {
+    type: listing.type,
     name: listing.name,
-    city: listing.city,
-    state: listing.state,
-    metro: metro.name,
-    metroSlug: metro.slug,
-    phone: listing.phone,
+    tagline: listing.tagline,
+    bio: listing.bio,
+    contactEmail: listing.contactEmail,
     website: listing.website,
-    email: listing.email,
+    phone: listing.phone,
+    homeCity: listing.homeCity,
+    homeState: listing.homeState,
+    licenseId: listing.licenseId,
+    photos: listing.photos,
+    primaryService: listing.primaryService,
     services: listing.services,
-    description: listing.description,
-    sourceUrl: listing.sourceUrl,
-    published: listing.published,
     featured: listing.featured,
+    founding: listing.founding,
+    verified: listing.verified,
+    status: listing.status,
+    sourceUrl: listing.sourceUrl,
     claimable: listing.claimable,
   };
 }
@@ -434,7 +538,7 @@ export async function importListingsFromCsv(
 ): Promise<ImportResult> {
   const dryRun = Boolean(options.dryRun);
   const insertOnly = Boolean(options.insertOnly);
-  const createMetros = options.createMetros !== false;
+  const createCities = options.createCities !== false;
   const prisma = options.prisma ?? null;
   const log = options.log;
 
@@ -451,12 +555,10 @@ export async function importListingsFromCsv(
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const metros =
+  const cities =
     dryRun && !prisma
       ? []
-      : await prisma!.metro.findMany({
-          select: { id: true, slug: true, name: true, state: true, stateCode: true },
-        });
+      : await prisma!.city.findMany({ select: { id: true, slug: true, name: true } });
 
   for (let index = 0; index < rows.length; index += 1) {
     const mapped = mapRow(rows[index], index);
@@ -466,18 +568,27 @@ export async function importListingsFromCsv(
     }
     warnings.push(...mapped.warnings);
 
-    const metro = await resolveMetro(prisma, metros, mapped, createMetros, dryRun);
-    if (!metro) {
-      errors.push(`Row "${mapped.name}": unknown metro "${mapped.metro}"`);
-      continue;
+    const cityIds: string[] = [];
+    for (const cityName of mapped.cityNames) {
+      const city = await resolveCity(prisma, cities, mapped, cityName, createCities, dryRun);
+      if (!city) {
+        errors.push(`Row "${mapped.name}": unknown metro "${cityName}"`);
+        continue;
+      }
+      cityIds.push(city.id);
     }
+
+    if (mapped.cityNames.length && !cityIds.length) continue;
 
     const existing =
       dryRun && !prisma
         ? null
         : await prisma!.listing.findFirst({
             where: {
-              OR: [{ slug: mapped.slug }, { name: { equals: mapped.name, mode: "insensitive" } }],
+              OR: [
+                { slug: mapped.slug },
+                { name: { equals: mapped.name, mode: "insensitive" } },
+              ],
             },
             select: { id: true, slug: true, name: true },
           });
@@ -490,19 +601,24 @@ export async function importListingsFromCsv(
     if (dryRun) {
       const action = existing ? "update" : "create";
       log?.(
-        `[dry-run] ${action} "${mapped.name}" → ${mapped.slug} (${mapped.published ? "published" : "draft"}) [${metro.name}] ${mapped.services.map(serviceLabel).join(", ")}`,
+        `[dry-run] ${action} ${mapped.type} "${mapped.name}" → ${mapped.slug} (${mapped.status}) [${mapped.cityNames.join(", ") || "no metro"}]`,
       );
       if (existing) updated.push(mapped.name);
       else created.push(mapped.name);
       continue;
     }
 
+    const uniqueCityIds = [...new Set(cityIds)];
     if (existing) {
       await prisma!.listing.update({
         where: { id: existing.id },
         data: {
-          ...listingFields(mapped, metro),
+          ...listingFields(mapped),
           slug: mapped.slugFromCsv ? mapped.slug : existing.slug,
+          cities: {
+            deleteMany: {},
+            create: uniqueCityIds.map((cityId) => ({ cityId })),
+          },
         },
       });
       updated.push(mapped.name);
@@ -515,8 +631,11 @@ export async function importListingsFromCsv(
       }
       await prisma!.listing.create({
         data: {
-          ...listingFields(mapped, metro),
+          ...listingFields(mapped),
           slug,
+          cities: {
+            create: uniqueCityIds.map((cityId) => ({ cityId })),
+          },
         },
       });
       created.push(mapped.name);

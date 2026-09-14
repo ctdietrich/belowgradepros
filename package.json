@@ -2,7 +2,7 @@
   "name": "belowgradepros",
   "version": "0.1.0",
   "private": true,
-  "description": "BelowGradePros — US national directory for foundation repair and crawl-space/basement encapsulation contractors.",
+  "description": "BelowGradePros.com — specialty directory for foundation repair and crawl-space/basement encapsulation contractors.",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

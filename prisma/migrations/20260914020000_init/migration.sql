@@ -2,34 +2,41 @@
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateTable
-CREATE TABLE "Metro" (
+CREATE TABLE "City" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "state" TEXT NOT NULL,
-    "stateCode" TEXT NOT NULL,
+    "region" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "heroImage" TEXT,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT "Metro_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "City_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Listing" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'contractor',
     "name" TEXT NOT NULL,
-    "city" TEXT NOT NULL,
-    "state" TEXT NOT NULL,
-    "metro" TEXT NOT NULL,
-    "metroSlug" TEXT NOT NULL,
-    "phone" TEXT,
+    "tagline" TEXT,
+    "bio" TEXT NOT NULL,
+    "contactEmail" TEXT NOT NULL,
     "website" TEXT,
-    "email" TEXT,
+    "phone" TEXT,
+    "homeCity" TEXT,
+    "homeState" TEXT,
+    "licenseId" TEXT,
+    "photos" JSONB NOT NULL,
+    "primaryService" TEXT NOT NULL DEFAULT 'foundation',
     "services" JSONB NOT NULL,
-    "description" TEXT NOT NULL,
-    "sourceUrl" TEXT,
-    "published" BOOLEAN NOT NULL DEFAULT false,
     "featured" BOOLEAN NOT NULL DEFAULT false,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "status" TEXT NOT NULL DEFAULT 'draft',
+    "sourceUrl" TEXT,
     "claimable" BOOLEAN NOT NULL DEFAULT true,
     "claimedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -39,12 +46,21 @@ CREATE TABLE "Listing" (
 );
 
 -- CreateTable
+CREATE TABLE "ListingCity" (
+    "listingId" TEXT NOT NULL,
+    "cityId" TEXT NOT NULL,
+
+    CONSTRAINT "ListingCity_pkey" PRIMARY KEY ("listingId","cityId")
+);
+
+-- CreateTable
 CREATE TABLE "ClaimRequest" (
     "id" TEXT NOT NULL,
     "listingId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "message" TEXT NOT NULL,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -54,15 +70,15 @@ CREATE TABLE "ClaimRequest" (
 -- CreateTable
 CREATE TABLE "Submission" (
     "id" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "website" TEXT,
-    "phone" TEXT,
-    "city" TEXT NOT NULL,
-    "state" TEXT NOT NULL,
-    "metro" TEXT NOT NULL,
+    "cities" TEXT NOT NULL,
+    "primaryService" TEXT NOT NULL DEFAULT 'foundation',
     "services" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
+    "bio" TEXT NOT NULL,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -70,19 +86,16 @@ CREATE TABLE "Submission" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Metro_slug_key" ON "Metro"("slug");
+CREATE UNIQUE INDEX "City_slug_key" ON "City"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Listing_slug_key" ON "Listing"("slug");
 
--- CreateIndex
-CREATE INDEX "Listing_published_metroSlug_idx" ON "Listing"("published", "metroSlug");
-
--- CreateIndex
-CREATE INDEX "Listing_state_idx" ON "Listing"("state");
+-- AddForeignKey
+ALTER TABLE "ListingCity" ADD CONSTRAINT "ListingCity_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Listing" ADD CONSTRAINT "Listing_metroSlug_fkey" FOREIGN KEY ("metroSlug") REFERENCES "Metro"("slug") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ListingCity" ADD CONSTRAINT "ListingCity_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES "City"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ClaimRequest" ADD CONSTRAINT "ClaimRequest_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;

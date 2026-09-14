@@ -37,7 +37,7 @@ export function ImportForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-slate-deep px-5 py-2.5 text-sm text-paper hover:bg-slate disabled:opacity-60"
+        className="rounded-full bg-slate px-5 py-2.5 text-sm text-page hover:bg-slate-soft disabled:opacity-60"
       >
         {pending ? "Importing…" : "Import CSV"}
       </button>
@@ -48,7 +48,7 @@ export function ImportForm() {
 function ImportResult({ state }: { state: NonNullable<ImportActionState> }) {
   return (
     <div className="rounded-2xl border border-slate/10 bg-white p-4 text-sm">
-      <p className="font-medium text-slate-deep">{state.message}</p>
+      <p className="font-medium text-slate">{state.message}</p>
       <dl className="mt-4 grid grid-cols-3 gap-3">
         <Count label="Created" value={state.created ?? 0} />
         <Count label="Updated" value={state.updated ?? 0} />
@@ -82,7 +82,7 @@ function Count({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-[0.12em] text-muted">{label}</dt>
-      <dd className="font-display text-3xl text-slate-deep">{value}</dd>
+      <dd className="font-display text-3xl text-slate">{value}</dd>
     </div>
   );
 }

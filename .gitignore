@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# sqlite leftovers
+# sqlite
 prisma/dev.db
 prisma/dev.db-journal
 *.db
@@ -48,4 +48,4 @@ prisma/dev.db-journal
 
 # Local ops CSVs (keep the checked-in sample)
 data/*.csv
-!data/listings.sample.csv
+!data/hero-seed.sample.csv

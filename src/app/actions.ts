@@ -4,14 +4,25 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { ADMIN_COOKIE, adminToken, isValidAdminPassword, requireAdmin } from "@/lib/admin";
-import { normalizeServiceKey } from "@/lib/config";
+import {
+  ADMIN_COOKIE,
+  adminToken,
+  isValidAdminPassword,
+  requireAdmin,
+} from "@/lib/admin";
+import {
+  normalizeAdditionalService,
+  normalizePrimaryService,
+  type AdditionalServiceKey,
+} from "@/lib/config";
+import { foundingPaymentLink } from "@/lib/stripe";
 import {
   importListingsFromCsv,
   isCsvUpload,
   MAX_IMPORT_CSV_BYTES,
   summarizeImport,
 } from "@/lib/import-listings";
+import { normalizeListingStatus } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
 
 export type ActionState = { ok: boolean; error?: string; message?: string } | null;
@@ -32,66 +43,69 @@ function readString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
-function selectedServices(formData: FormData) {
-  const fromChecks = formData
-    .getAll("services")
-    .map(String)
-    .map((value) => normalizeServiceKey(value))
-    .filter((value): value is NonNullable<typeof value> => Boolean(value));
-  if (fromChecks.length) return [...new Set(fromChecks)];
-
-  return readString(formData, "servicesText")
+function parseList(value: string) {
+  return value
     .split(",")
-    .map((item) => normalizeServiceKey(item))
-    .filter((value): value is NonNullable<typeof value> => Boolean(value));
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseBadges(value: string) {
+  const keys = parseList(value)
+    .map((item) => normalizeAdditionalService(item))
+    .filter((item): item is AdditionalServiceKey => Boolean(item));
+  return [...new Set(keys)];
 }
 
 export async function submitListing(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const type = readString(formData, "type") || "contractor";
   const name = readString(formData, "name");
   const email = readString(formData, "email").toLowerCase();
   const website = readString(formData, "website");
-  const phone = readString(formData, "phone");
-  const city = readString(formData, "city");
-  const state = readString(formData, "state");
-  const metro = readString(formData, "metro") || city;
-  const description = readString(formData, "description");
-  const services = selectedServices(formData);
+  const cities = readString(formData, "cities");
+  const primaryService = normalizePrimaryService(readString(formData, "primaryService")) ?? "foundation";
+  const services = formData
+    .getAll("services")
+    .map(String)
+    .map((key) => normalizeAdditionalService(key))
+    .filter((key): key is AdditionalServiceKey => Boolean(key))
+    .join(", ");
+  const bio = readString(formData, "bio");
+  const founding = formData.get("founding") === "on";
 
-  if (name.length < 2 || description.length < 20) {
-    return { ok: false, error: "Add a company name and a short description (at least 20 characters)." };
+  if (type !== "contractor") {
+    return { ok: false, error: "This directory lists contractors only." };
   }
-  if (!city || !state) {
-    return { ok: false, error: "City and state are required." };
+  if (name.length < 2 || bio.length < 20) {
+    return { ok: false, error: "Add a name and a short bio (at least 20 characters)." };
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { ok: false, error: "Please enter a valid contact email." };
   }
-  if (!services.length) {
-    return { ok: false, error: "Choose at least one service." };
-  }
 
   await prisma.submission.create({
     data: {
+      type,
       name,
       email,
       website: website || null,
-      phone: phone || null,
-      city,
-      state,
-      metro,
-      services: services.join(","),
-      description,
+      cities,
+      primaryService,
+      services: services || readString(formData, "services"),
+      bio,
+      founding,
     },
   });
 
   revalidatePath("/admin");
   return {
     ok: true,
-    message:
-      "Received. We review submissions before they appear in the directory. Founding listings are $199–299/mo when we open paid placement — this form is inquiry-only for now.",
+    message: founding
+      ? "Received. We will review the listing and follow up on the founding path when Stripe is live."
+      : "Received. We review submissions before they appear in the directory.",
   };
 }
 
@@ -116,14 +130,39 @@ export async function submitClaim(
     return { ok: false, error: "That listing is not available to claim." };
   }
 
+  const founding = formData.get("founding") === "on";
+
   await prisma.claimRequest.create({
-    data: { listingId, name, email, message },
+    data: { listingId, name, email, message, founding },
   });
 
   revalidatePath("/admin");
   return {
     ok: true,
-    message: "Claim received. We will write back before anything is marked claimed.",
+    message: founding
+      ? "Claim received. We will write back on the profile and the founding listing path."
+      : "Claim received. We will write back from the editorial desk.",
+  };
+}
+
+export async function startFoundingCheckout(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const email = readString(formData, "email").toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "Please enter a valid email." };
+  }
+
+  const link = foundingPaymentLink();
+  if (link) {
+    redirect(link);
+  }
+
+  return {
+    ok: true,
+    message:
+      "Founding checkout is stubbed until Stripe keys or a Payment Link are set. Submit or claim a listing and we will follow up.",
   };
 }
 
@@ -157,23 +196,40 @@ export async function logoutAdmin() {
 }
 
 function listingPayload(formData: FormData) {
-  const services = selectedServices(formData);
+  const type = readString(formData, "type") || "contractor";
+  const status = readString(formData, "status");
+  const photos = parseList(readString(formData, "photos"));
+  const servicesFromBoxes = formData
+    .getAll("serviceKeys")
+    .map(String)
+    .map((item) => normalizeAdditionalService(item))
+    .filter((item): item is AdditionalServiceKey => Boolean(item));
+  const servicesFromText = parseBadges(readString(formData, "services"));
+  const services = [...new Set([...servicesFromBoxes, ...servicesFromText])];
+  const cityIds = formData.getAll("cityIds").map(String).filter(Boolean);
+
   return {
+    type: type === "contractor" ? "contractor" : "contractor",
+    status: normalizeListingStatus(status, "draft"),
     name: readString(formData, "name"),
     slug: readString(formData, "slug"),
-    city: readString(formData, "city"),
-    state: readString(formData, "state"),
-    metro: readString(formData, "metro"),
-    metroSlug: readString(formData, "metroSlug"),
-    phone: readString(formData, "phone") || null,
+    tagline: readString(formData, "tagline") || null,
+    bio: readString(formData, "bio"),
+    contactEmail: readString(formData, "contactEmail"),
     website: readString(formData, "website") || null,
-    email: readString(formData, "email") || null,
+    phone: readString(formData, "phone") || null,
+    homeCity: readString(formData, "homeCity") || null,
+    homeState: readString(formData, "homeState") || null,
+    licenseId: readString(formData, "licenseId") || null,
+    photos,
+    primaryService: normalizePrimaryService(readString(formData, "primaryService")) ?? "foundation",
     services,
-    description: readString(formData, "description"),
     sourceUrl: readString(formData, "sourceUrl") || null,
-    published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
+    founding: formData.get("founding") === "on",
+    verified: formData.get("verified") === "on",
     claimable: formData.get("claimable") === "on",
+    cityIds,
   };
 }
 
@@ -183,6 +239,14 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 80);
+}
+
+function revalidatePublic() {
+  revalidatePath("/");
+  revalidatePath("/contractors");
+  revalidatePath("/cities");
+  revalidatePath("/services");
+  revalidatePath("/admin");
 }
 
 export async function importListingsCsv(
@@ -216,15 +280,12 @@ export async function importListingsCsv(
     const result = await importListingsFromCsv(csvText, {
       dryRun,
       insertOnly,
-      createMetros: true,
+      createCities: true,
       prisma,
     });
 
     if (!dryRun) {
-      revalidatePath("/");
-      revalidatePath("/search");
-      revalidatePath("/metros");
-      revalidatePath("/admin");
+      revalidatePublic();
     }
 
     return {
@@ -253,45 +314,57 @@ export async function saveListing(
   const id = readString(formData, "id");
   const payload = listingPayload(formData);
 
-  if (payload.name.length < 2 || payload.description.length < 10) {
-    return { ok: false, error: "Name and description are required." };
+  if (payload.name.length < 2 || payload.bio.length < 10) {
+    return { ok: false, error: "Name and bio are required." };
   }
-  if (!payload.city || !payload.state || !payload.metroSlug) {
-    return { ok: false, error: "City, state, and metro hub are required." };
-  }
-  if (!payload.services.length) {
-    return { ok: false, error: "Choose at least one service." };
-  }
-
-  const metro = await prisma.metro.findUnique({ where: { slug: payload.metroSlug } });
-  if (!metro) return { ok: false, error: "Unknown metro hub." };
 
   const slug = payload.slug || slugify(payload.name);
   if (!slug) return { ok: false, error: "A URL slug is required." };
 
   const data = {
+    type: payload.type,
+    status: payload.status,
     name: payload.name,
     slug,
-    city: payload.city,
-    state: payload.state,
-    metro: payload.metro || metro.name,
-    metroSlug: metro.slug,
-    phone: payload.phone,
+    tagline: payload.tagline,
+    bio: payload.bio,
+    contactEmail: payload.contactEmail,
     website: payload.website,
-    email: payload.email,
+    phone: payload.phone,
+    homeCity: payload.homeCity,
+    homeState: payload.homeState,
+    licenseId: payload.licenseId,
+    photos: payload.photos,
+    primaryService: payload.primaryService,
     services: payload.services,
-    description: payload.description,
     sourceUrl: payload.sourceUrl,
-    published: payload.published,
     featured: payload.featured,
+    founding: payload.founding,
+    verified: payload.verified,
     claimable: payload.claimable,
   };
 
   try {
     if (id) {
-      await prisma.listing.update({ where: { id }, data });
+      await prisma.listing.update({
+        where: { id },
+        data: {
+          ...data,
+          cities: {
+            deleteMany: {},
+            create: payload.cityIds.map((cityId) => ({ cityId })),
+          },
+        },
+      });
     } else {
-      await prisma.listing.create({ data });
+      await prisma.listing.create({
+        data: {
+          ...data,
+          cities: {
+            create: payload.cityIds.map((cityId) => ({ cityId })),
+          },
+        },
+      });
     }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -300,10 +373,7 @@ export async function saveListing(
     return { ok: false, error: "Could not save the listing." };
   }
 
-  revalidatePath("/");
-  revalidatePath("/search");
-  revalidatePath("/metros");
-  revalidatePath("/admin");
+  revalidatePublic();
   revalidatePath(`/l/${slug}`);
   redirect("/admin");
 }
@@ -313,8 +383,7 @@ export async function deleteListing(formData: FormData) {
   const id = readString(formData, "id");
   if (!id) return;
   await prisma.listing.delete({ where: { id } });
-  revalidatePath("/");
-  revalidatePath("/admin");
+  revalidatePublic();
   redirect("/admin");
 }
 
