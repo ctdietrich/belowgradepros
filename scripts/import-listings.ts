@@ -24,9 +24,12 @@ import {
 } from "../src/lib/import-listings";
 import {
   DEPRIORITIZED_HUB_SLUGS,
+  FL_ENCAP_HUB_SLUGS,
   HOMEPAGE_SERVICE_CHIPS,
   HOMEPAGE_STRIP_SLUGS,
   WAVE1_HUB_SLUGS,
+  catalogCardChips,
+  catalogCardHref,
   homepageCardChips,
   homepageCardHref,
   hubPageTitle,
@@ -209,6 +212,30 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if (!matchCity("raleigh", wave1)) throw new Error("metro_slug raleigh");
   if (!matchCity("tulsa", wave1)) throw new Error("metro_slug tulsa");
   if (!matchCity("charleston-sc", wave1)) throw new Error("metro_slug charleston-sc");
+  for (const slug of FL_ENCAP_HUB_SLUGS) {
+    if (!matchCity(slug, wave1)) throw new Error(`metro_slug ${slug}`);
+  }
+  if (matchCity("miami", wave1)) throw new Error("Do not treat miami as a Wave 1 hub");
+  if (matchCity("ft myers", wave1) || matchCity("wpb", wave1) || matchCity("ft lauderdale", wave1)) {
+    throw new Error("Florida catalog hubs must use exact slugs, no aliases");
+  }
+  for (const needle of [
+    "tallahassee",
+    "pensacola",
+    "fort myers",
+    "ft myers",
+    "sarasota",
+    "west palm beach",
+    "wpb",
+    "fort lauderdale",
+    "ft lauderdale",
+    "daytona beach",
+    "miami",
+  ]) {
+    if (CITY_ALIASES[normalizePlace(needle)]) {
+      throw new Error(`Do not add an import alias for ${needle}`);
+    }
+  }
   if (!matchCity("OKC", wave1)) throw new Error("alias OKC");
   if (!matchCity("Charleston, SC", wave1)) throw new Error("alias Charleston, SC");
   if (!matchCity("Greenville SC", wave1)) throw new Error("alias Greenville SC");
@@ -254,12 +281,30 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
     "raleigh",
     "tulsa",
     "charleston-sc",
+    ...FL_ENCAP_HUB_SLUGS,
   ] as const) {
     if (!hubSlugs.includes(slug)) throw new Error(`${slug} must exist as a Wave 1 hub`);
     if (stripSlugs.includes(slug)) throw new Error(`${slug} must stay off the homepage strip`);
   }
   if (hubSlugs.includes("charleston")) {
     throw new Error("Charleston hub must be charleston-sc, not charleston");
+  }
+  if (FL_ENCAP_HUB_SLUGS.length !== 7) {
+    throw new Error("Expected seven Florida encapsulation catalog hubs");
+  }
+  if (FL_ENCAP_HUB_SLUGS.includes("miami" as (typeof FL_ENCAP_HUB_SLUGS)[number])) {
+    throw new Error("Fort Lauderdale is not a Miami desk");
+  }
+  for (const slug of FL_ENCAP_HUB_SLUGS) {
+    if (catalogCardHref(slug) !== `/cities/${slug}?service=encapsulation`) {
+      throw new Error(`${slug} catalog card must default to encapsulation`);
+    }
+    if (!catalogCardChips(slug).some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
+      throw new Error(`${slug} catalog card must keep a foundation chip`);
+    }
+    if (!hubPageTitle(slug).includes("Crawl Space Encapsulation")) {
+      throw new Error(`${slug} interim title should be encapsulation-heavy`);
+    }
   }
   if (hubPageTitle("memphis") !== "Memphis Foundation Repair & Crawl Encapsulation") {
     throw new Error("Memphis hub title should be both-lean");

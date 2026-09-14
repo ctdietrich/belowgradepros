@@ -11,7 +11,7 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
-import { buildCityIndex, hubPageDescription, hubPageTitle } from "@/lib/hubs";
+import { buildCityIndex, catalogCardChips, catalogCardCta, catalogCardHref, hubPageDescription, hubPageTitle } from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -112,6 +112,9 @@ export default async function CityDetailPage({
               region={item.region}
               heroImage={item.heroImage}
               count={item.count}
+              href={catalogCardHref(item.slug)}
+              cta={catalogCardCta(item.slug)}
+              chips={catalogCardChips(item.slug)}
             />
           ))}
         </div>

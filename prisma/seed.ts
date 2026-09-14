@@ -28,6 +28,13 @@ const hubHero: Record<string, string> = {
   raleigh: img("photo-1600596542815-ffad4c1539a9"),
   tulsa: img("photo-1504307651254-35680f356dfd"),
   "charleston-sc": img("photo-1507525428034-b723cf961d3e"),
+  tallahassee: img("photo-1600585154340-be6161a56a0c"),
+  pensacola: img("photo-1507525428034-b723cf961d3e"),
+  "fort-myers": img("photo-1506905925346-21bda4d32df4"),
+  sarasota: img("photo-1507525428034-b723cf961d3e"),
+  "west-palm-beach": img("photo-1506905925346-21bda4d32df4"),
+  "fort-lauderdale": img("photo-1507525428034-b723cf961d3e"),
+  "daytona-beach": img("photo-1506905925346-21bda4d32df4"),
 };
 
 async function main() {

@@ -71,7 +71,7 @@ Comma, semicolon, tab, or `|` lists work for services, photos, metros, and metro
 
 There is **no** `notes` or `photo_policy` column on `Listing`. Notes become the tagline when `tagline` is empty. `photo_policy` is accepted and discarded.
 
-If `metro_slug` is present it wins over the fuzzy `metro` name. Wave 1 slugs: `houston`, `dallas-fort-worth`, `atlanta`, `tampa`, `chicago`, `charlotte`, `austin`, `st-louis`, `jacksonville`, `orlando`, `nashville`, `memphis`, `birmingham`, `oklahoma-city`, `greenville-sc`, `raleigh`, `tulsa`, `charleston-sc`. Homepage strip order is separate (`HOMEPAGE_STRIP`). Charleston is `charleston-sc`, not `charleston`.
+If `metro_slug` is present it wins over the fuzzy `metro` name. Wave 1 slugs: `houston`, `dallas-fort-worth`, `atlanta`, `tampa`, `chicago`, `charlotte`, `austin`, `st-louis`, `jacksonville`, `orlando`, `nashville`, `memphis`, `birmingham`, `oklahoma-city`, `greenville-sc`, `raleigh`, `tulsa`, `charleston-sc`, `tallahassee`, `pensacola`, `fort-myers`, `sarasota`, `west-palm-beach`, `fort-lauderdale`, `daytona-beach`. Homepage strip order is separate (`HOMEPAGE_STRIP`). Charleston is `charleston-sc`, not `charleston`. Florida catalog adds use **exact** `metro_slug` values (no import aliases). Fort Lauderdale is not Miami.
 
 ### Service flags
 
@@ -119,7 +119,7 @@ v1 is a single listing type: `contractor`. Blank or unknown `type` values become
 
 ### City hubs
 
-`metro_slug` matches `City.slug` first. Otherwise the script matches by name and Wave 1 aliases (`DFW` → `dallas-fort-worth`, `Tampa Bay` → `tampa`, `St. Louis` → `st-louis`, `JAX` → `jacksonville`, `OKC` → `oklahoma-city`, `Charleston, SC` → `charleston-sc`). Tampa is stored as `tampa`, not `tampa-bay`. Charleston is `charleston-sc`, not `charleston`. Miami is not a Wave 1 hub.
+`metro_slug` matches `City.slug` first. Otherwise the script matches by name and Wave 1 aliases (`DFW` → `dallas-fort-worth`, `Tampa Bay` → `tampa`, `St. Louis` → `st-louis`, `JAX` → `jacksonville`, `OKC` → `oklahoma-city`, `Charleston, SC` → `charleston-sc`). Tampa is stored as `tampa`, not `tampa-bay`. Charleston is `charleston-sc`, not `charleston`. Florida catalog hubs (`tallahassee`, `pensacola`, `fort-myers`, `sarasota`, `west-palm-beach`, `fort-lauderdale`, `daytona-beach`) match **exact slugs only** — no `ft myers` / `wpb` / `miami` aliases. Miami is not a Wave 1 hub; Fort Lauderdale is a separate Broward desk.
 
 If both `metro_slug` and `metro` are empty, `city` is used as the hub name.
 

@@ -198,6 +198,83 @@ export const WAVE1_HUBS = [
     description:
       "Charleston, SC crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
+  {
+    slug: "tallahassee",
+    name: "Tallahassee",
+    state: "FL",
+    region: "Big Bend",
+    title: "Tallahassee Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Tallahassee Foundation Repair Contractors",
+    encapsulationTitle: "Tallahassee Crawl Space Encapsulation Contractors",
+    description:
+      "Tallahassee crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "pensacola",
+    name: "Pensacola",
+    state: "FL",
+    region: "Panhandle",
+    title: "Pensacola Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Pensacola Foundation Repair Contractors",
+    encapsulationTitle: "Pensacola Crawl Space Encapsulation Contractors",
+    description:
+      "Pensacola crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "fort-myers",
+    name: "Fort Myers",
+    state: "FL",
+    region: "Southwest Florida",
+    title: "Fort Myers Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Fort Myers Foundation Repair Contractors",
+    encapsulationTitle: "Fort Myers Crawl Space Encapsulation Contractors",
+    description:
+      "Fort Myers crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "sarasota",
+    name: "Sarasota",
+    state: "FL",
+    region: "Gulf Coast",
+    title: "Sarasota Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Sarasota Foundation Repair Contractors",
+    encapsulationTitle: "Sarasota Crawl Space Encapsulation Contractors",
+    description:
+      "Sarasota crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "west-palm-beach",
+    name: "West Palm Beach",
+    state: "FL",
+    region: "Palm Beaches",
+    title: "West Palm Beach Crawl Space Encapsulation & Foundation",
+    foundationTitle: "West Palm Beach Foundation Repair Contractors",
+    encapsulationTitle: "West Palm Beach Crawl Space Encapsulation Contractors",
+    description:
+      "West Palm Beach crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "fort-lauderdale",
+    name: "Fort Lauderdale",
+    state: "FL",
+    region: "Broward",
+    title: "Fort Lauderdale Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Fort Lauderdale Foundation Repair Contractors",
+    encapsulationTitle: "Fort Lauderdale Crawl Space Encapsulation Contractors",
+    description:
+      "Fort Lauderdale crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Broward desk — not Miami. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "daytona-beach",
+    name: "Daytona Beach",
+    state: "FL",
+    region: "Volusia",
+    title: "Daytona Beach Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Daytona Beach Foundation Repair Contractors",
+    encapsulationTitle: "Daytona Beach Crawl Space Encapsulation Contractors",
+    description:
+      "Daytona Beach crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
 ] as const;
 
 export type Wave1HubSlug = (typeof WAVE1_HUBS)[number]["slug"];
@@ -236,6 +313,27 @@ export const HOMEPAGE_STRIP_SLUGS = HOMEPAGE_STRIP.map((item) => item.slug);
 export const DEPRIORITIZED_HUB_SLUGS = WAVE1_HUB_SLUGS.filter(
   (slug) => !(HOMEPAGE_STRIP_SLUGS as readonly string[]).includes(slug),
 );
+
+/**
+ * Florida catalog hubs — encapsulation default + foundation chip on `/cities`.
+ * Exact slugs only (no import aliases). Not on the homepage moisture strip.
+ * Fort Lauderdale is a Broward desk, not Miami.
+ */
+export const FL_ENCAP_HUB_SLUGS = [
+  "tallahassee",
+  "pensacola",
+  "fort-myers",
+  "sarasota",
+  "west-palm-beach",
+  "fort-lauderdale",
+  "daytona-beach",
+] as const;
+
+export type FlEncapHubSlug = (typeof FL_ENCAP_HUB_SLUGS)[number];
+
+export function isFlEncapHub(slug: string): slug is FlEncapHubSlug {
+  return (FL_ENCAP_HUB_SLUGS as readonly string[]).includes(slug);
+}
 
 /** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
 export const HOMEPAGE_SERVICE_CHIPS = [
@@ -298,6 +396,22 @@ export function homepageCardChips(slug: string): { label: string; href: string }
     chips.push({ label: "Pier & beam", href: `/cities/${slug}` });
   }
   return chips;
+}
+
+/** `/cities` index cards — FL encap hubs default to encapsulation and keep a foundation chip. */
+export function catalogCardHref(slug: string) {
+  if (isFlEncapHub(slug)) return `/cities/${slug}?service=encapsulation`;
+  return `/cities/${slug}`;
+}
+
+export function catalogCardCta(slug: string) {
+  if (isFlEncapHub(slug)) return "Encapsulation";
+  return null;
+}
+
+export function catalogCardChips(slug: string): { label: string; href: string }[] {
+  if (!isFlEncapHub(slug)) return [];
+  return [{ label: "Foundation", href: `/cities/${slug}?service=foundation-repair` }];
 }
 
 type HomepageStripCity = {

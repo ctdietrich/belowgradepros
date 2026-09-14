@@ -36,7 +36,7 @@ Brand lock: typographic wordmark **BelowGrade** (slate) + **Pros** (amber, heavi
 
 FTF `/destinations` is `/cities`. There is no `/last-minute`, `/guides`, `/lodges`, `/c/waterproofing`, or Beehiiv.
 
-Homepage strip (8 cards, `HOMEPAGE_STRIP` in `src/lib/hubs.ts`): `tampa` → `houston` → `atlanta` → `charlotte` → `jacksonville` → `orlando` → `nashville` → `dallas-fort-worth`. Chicago, Austin, St. Louis, Memphis, Birmingham, Oklahoma City, Greenville SC, Raleigh, Tulsa, and Charleston SC stay as `/cities/{slug}` hubs but are off the primary strip. Tampa is `tampa`, not `tampa-bay`. Charleston is `charleston-sc`, not `charleston`. Do not auto-add Miami.
+Homepage strip (8 cards, `HOMEPAGE_STRIP` in `src/lib/hubs.ts`): `tampa` → `houston` → `atlanta` → `charlotte` → `jacksonville` → `orlando` → `nashville` → `dallas-fort-worth`. Additional Wave 1 hubs stay on `/cities` (Chicago, Austin, St. Louis, Memphis, Birmingham, Oklahoma City, Greenville SC, Raleigh, Tulsa, Charleston SC, plus Florida encapsulation desks: Tallahassee, Pensacola, Fort Myers, Sarasota, West Palm Beach, Fort Lauderdale, Daytona Beach). Tampa is `tampa`, not `tampa-bay`. Charleston is `charleston-sc`, not `charleston`. Fort Lauderdale is not Miami. Do not auto-add Miami.
 
 ## Local setup
 
