@@ -59,6 +59,13 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/cities/chicago` | Wave 1 hub (kept; not in primary homepage strip) |
 | `/cities/austin` | Wave 1 hub (kept; not in primary homepage strip) |
 | `/cities/st-louis` | Wave 1 hub (kept; not in primary homepage strip) |
+| `/cities/memphis` | Wave 1 hub (kept; not in primary homepage strip); both |
+| `/cities/birmingham` | Wave 1 hub (kept; not in primary homepage strip); both |
+| `/cities/oklahoma-city` | Wave 1 hub (kept; not in primary homepage strip); foundation-heavy |
+| `/cities/greenville-sc` | Wave 1 hub (kept; not in primary homepage strip); both |
+| `/cities/raleigh` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-heavy |
+| `/cities/tulsa` | Wave 1 hub (kept; not in primary homepage strip); foundation-heavy |
+| `/cities/charleston-sc` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-heavy (`charleston-sc`, not `charleston`) |
 | `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`) |
 | `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`) |
 | `/l/{slug}` | Listing detail + JSON-LD |
@@ -71,7 +78,7 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/contractors` | Extra browse (all contractors) |
 | `/services` · `/services/foundation` · `/services/encapsulation` | Extra browse (primary desk only) |
 
-There is no `/c/waterproofing`, mold category, `/cities/tampa-bay`, `/cities/miami`, `/last-minute`, `/guides`, or `/lodges`.
+There is no `/c/waterproofing`, mold category, `/cities/tampa-bay`, `/cities/miami`, `/cities/charleston` (use `charleston-sc`), `/last-minute`, `/guides`, or `/lodges`.
 
 The **homepage strip** is an explicit 8-card list in `src/lib/hubs.ts` (`HOMEPAGE_STRIP`) — not City `sortOrder` and not `getCities()` alone:
 
@@ -79,7 +86,7 @@ Tampa → Houston → Atlanta → Charlotte → Jacksonville → Orlando → Nas
 
 Moisture cards default to `?service=encapsulation` and keep a foundation chip. DFW is foundation-first (`?service=foundation-repair`) with a pier & beam chip to `/cities/dallas-fort-worth` (no pier-and-beam category URL). Homepage service chips: encapsulation → Tampa encapsulation, foundation → Houston foundation-repair, pier & beam → DFW.
 
-Chicago, Austin, and St. Louis stay as `/cities/{slug}` hubs and are **not** in the primary strip. Do not auto-add Miami. Seed `sortOrder` still follows `WAVE1_HUBS` array order for the catalog.
+Chicago, Austin, St. Louis, Memphis, Birmingham, Oklahoma City, Greenville SC, Raleigh, Tulsa, and Charleston SC stay as `/cities/{slug}` hubs and are **not** in the primary strip. Charleston is `charleston-sc`, not `charleston`. Do not auto-add Miami. Seed `sortOrder` still follows `WAVE1_HUBS` array order for the catalog.
 
 A listing with `primaryService=both` appears in **both** hub service filters.
 

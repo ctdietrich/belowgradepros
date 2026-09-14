@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl, cityPath, listingPath } from "@/lib/config";
+import { WAVE1_HUB_SLUGS } from "@/lib/hubs";
 import { publishedListingWhere } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
 
@@ -30,14 +31,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
   }));
 
+  const citySlugs = [...new Set([...WAVE1_HUB_SLUGS, ...cities.map((city) => city.slug)])];
+
   return [
     ...staticRoutes,
-    ...cities.flatMap((city) => {
+    ...citySlugs.flatMap((slug) => {
       const lastModified = new Date();
       return [
-        { url: absoluteUrl(cityPath(city.slug)), lastModified },
-        { url: absoluteUrl(cityPath(city.slug, "foundation-repair")), lastModified },
-        { url: absoluteUrl(cityPath(city.slug, "encapsulation")), lastModified },
+        { url: absoluteUrl(cityPath(slug)), lastModified },
+        { url: absoluteUrl(cityPath(slug, "foundation-repair")), lastModified },
+        { url: absoluteUrl(cityPath(slug, "encapsulation")), lastModified },
       ];
     }),
     ...listings.map((listing) => ({

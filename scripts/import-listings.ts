@@ -13,9 +13,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import {
+  CITY_ALIASES,
   importListingsFromCsv,
   mapRow,
   matchCity,
+  normalizePlace,
   parseCsv,
   summarizeImport,
   type ImportListingsOptions,
@@ -27,6 +29,7 @@ import {
   WAVE1_HUB_SLUGS,
   homepageCardChips,
   homepageCardHref,
+  hubPageTitle,
 } from "../src/lib/hubs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -199,6 +202,22 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if (!matchCity("jacksonville", wave1)) throw new Error("metro_slug jacksonville");
   if (!matchCity("orlando", wave1)) throw new Error("metro_slug orlando");
   if (!matchCity("nashville", wave1)) throw new Error("metro_slug nashville");
+  if (!matchCity("memphis", wave1)) throw new Error("metro_slug memphis");
+  if (!matchCity("birmingham", wave1)) throw new Error("metro_slug birmingham");
+  if (!matchCity("oklahoma-city", wave1)) throw new Error("metro_slug oklahoma-city");
+  if (!matchCity("greenville-sc", wave1)) throw new Error("metro_slug greenville-sc");
+  if (!matchCity("raleigh", wave1)) throw new Error("metro_slug raleigh");
+  if (!matchCity("tulsa", wave1)) throw new Error("metro_slug tulsa");
+  if (!matchCity("charleston-sc", wave1)) throw new Error("metro_slug charleston-sc");
+  if (!matchCity("OKC", wave1)) throw new Error("alias OKC");
+  if (!matchCity("Charleston, SC", wave1)) throw new Error("alias Charleston, SC");
+  if (!matchCity("Greenville SC", wave1)) throw new Error("alias Greenville SC");
+  if (CITY_ALIASES[normalizePlace("charleston")]) {
+    throw new Error("Do not alias bare charleston (WV) to charleston-sc");
+  }
+  if (CITY_ALIASES[normalizePlace("Charleston, SC")] !== "charleston-sc") {
+    throw new Error("Charleston, SC must alias to charleston-sc");
+  }
   if (!matchCity("Dallas", [{ id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" }])) {
     throw new Error("alias Dallas");
   }
@@ -226,6 +245,42 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   }
   if (!hubSlugs.includes("jacksonville") || !hubSlugs.includes("orlando") || !hubSlugs.includes("nashville")) {
     throw new Error("Jacksonville, Orlando, and Nashville must exist as Wave 1 hubs");
+  }
+  for (const slug of [
+    "memphis",
+    "birmingham",
+    "oklahoma-city",
+    "greenville-sc",
+    "raleigh",
+    "tulsa",
+    "charleston-sc",
+  ] as const) {
+    if (!hubSlugs.includes(slug)) throw new Error(`${slug} must exist as a Wave 1 hub`);
+    if (stripSlugs.includes(slug)) throw new Error(`${slug} must stay off the homepage strip`);
+  }
+  if (hubSlugs.includes("charleston")) {
+    throw new Error("Charleston hub must be charleston-sc, not charleston");
+  }
+  if (hubPageTitle("memphis") !== "Memphis Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Memphis hub title should be both-lean");
+  }
+  if (hubPageTitle("birmingham") !== "Birmingham Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Birmingham hub title should be both-lean");
+  }
+  if (hubPageTitle("oklahoma-city") !== "Oklahoma City Foundation Repair Contractors") {
+    throw new Error("Oklahoma City hub title should be foundation-heavy");
+  }
+  if (hubPageTitle("greenville-sc") !== "Greenville Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Greenville SC hub title should be both-lean");
+  }
+  if (hubPageTitle("raleigh") !== "Raleigh Crawl Space Encapsulation & Foundation") {
+    throw new Error("Raleigh hub title should be encapsulation-heavy");
+  }
+  if (hubPageTitle("tulsa") !== "Tulsa Foundation Repair Contractors") {
+    throw new Error("Tulsa hub title should be foundation-heavy");
+  }
+  if (hubPageTitle("charleston-sc") !== "Charleston Crawl Space Encapsulation & Foundation") {
+    throw new Error("Charleston SC hub title should be encapsulation-heavy");
   }
   if (HOMEPAGE_SERVICE_CHIPS[0]?.href !== "/cities/tampa?service=encapsulation") {
     throw new Error("Encapsulation chip must target Tampa encapsulation");

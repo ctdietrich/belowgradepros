@@ -11,7 +11,7 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
-import { hubPageDescription, hubPageTitle } from "@/lib/hubs";
+import { buildCityIndex, hubPageDescription, hubPageTitle } from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -55,7 +55,7 @@ export default async function CityDetailPage({
     citySlug: city.slug,
     service: serviceFilter ?? undefined,
   });
-  const others = (await getCities()).filter((item) => item.id !== city.id);
+  const others = buildCityIndex(await getCities()).filter((item) => item.slug !== city.slug);
   const heading = hubPageTitle(city.slug, serviceFilter);
 
   return (
@@ -111,7 +111,7 @@ export default async function CityDetailPage({
               state={item.state}
               region={item.region}
               heroImage={item.heroImage}
-              count={item.listings.length}
+              count={item.count}
             />
           ))}
         </div>

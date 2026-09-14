@@ -68,6 +68,8 @@ export {
   homepageCardCta,
   homepageCardChips,
   buildHomepageStrip,
+  buildCityIndex,
+  catalogCityFallback,
 } from "./hubs";
 
 export const brand = {

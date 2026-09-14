@@ -121,6 +121,83 @@ export const WAVE1_HUBS = [
     description:
       "Nashville crawl space encapsulation and foundation repair contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
   },
+  {
+    slug: "memphis",
+    name: "Memphis",
+    state: "TN",
+    region: "Mid-South",
+    title: "Memphis Foundation Repair & Crawl Encapsulation",
+    foundationTitle: "Memphis Foundation Repair Contractors",
+    encapsulationTitle: "Memphis Crawl Space Encapsulation Contractors",
+    description:
+      "Find foundation repair and crawl space encapsulation contractors in Memphis. Settling, cracks, musty crawl. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "birmingham",
+    name: "Birmingham",
+    state: "AL",
+    region: "Southeast",
+    title: "Birmingham Foundation Repair & Crawl Encapsulation",
+    foundationTitle: "Birmingham Foundation Repair Contractors",
+    encapsulationTitle: "Birmingham Crawl Space Encapsulation Contractors",
+    description:
+      "Birmingham foundation repair and crawl space encapsulation contractors. Clay soils, settling, musty crawl spaces. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "oklahoma-city",
+    name: "Oklahoma City",
+    state: "OK",
+    region: "Oklahoma",
+    title: "Oklahoma City Foundation Repair Contractors",
+    foundationTitle: "Oklahoma City Foundation Repair Contractors",
+    encapsulationTitle: "Oklahoma City Crawl Space Encapsulation Contractors",
+    description:
+      "Oklahoma City foundation repair contractors for clay soils, settling cracks, and pier & beam. Compare specialists on BelowGradePros.",
+  },
+  {
+    slug: "greenville-sc",
+    name: "Greenville",
+    state: "SC",
+    region: "Carolinas",
+    title: "Greenville Foundation Repair & Crawl Encapsulation",
+    foundationTitle: "Greenville Foundation Repair Contractors",
+    encapsulationTitle: "Greenville Crawl Space Encapsulation Contractors",
+    description:
+      "Greenville, SC foundation repair and crawl space encapsulation contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "raleigh",
+    name: "Raleigh",
+    state: "NC",
+    region: "Carolinas",
+    title: "Raleigh Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Raleigh Foundation Repair Contractors",
+    encapsulationTitle: "Raleigh Crawl Space Encapsulation Contractors",
+    description:
+      "Raleigh crawl space encapsulation and foundation repair contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "tulsa",
+    name: "Tulsa",
+    state: "OK",
+    region: "Oklahoma",
+    title: "Tulsa Foundation Repair Contractors",
+    foundationTitle: "Tulsa Foundation Repair Contractors",
+    encapsulationTitle: "Tulsa Crawl Space Encapsulation Contractors",
+    description:
+      "Tulsa foundation repair for cracks, settling, and clay soils. Compare Oklahoma foundation specialists on BelowGradePros.",
+  },
+  {
+    slug: "charleston-sc",
+    name: "Charleston",
+    state: "SC",
+    region: "Lowcountry",
+    title: "Charleston Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Charleston Foundation Repair Contractors",
+    encapsulationTitle: "Charleston Crawl Space Encapsulation Contractors",
+    description:
+      "Charleston, SC crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
 ] as const;
 
 export type Wave1HubSlug = (typeof WAVE1_HUBS)[number]["slug"];
@@ -133,9 +210,6 @@ export const WAVE1_CITIES = WAVE1_HUBS.map(({ slug, name, state, region }) => ({
 }));
 
 export const WAVE1_HUB_SLUGS = WAVE1_HUBS.map((hub) => hub.slug);
-
-/** Hubs that stay at `/cities/{slug}` but are not in the primary homepage strip. */
-export const DEPRIORITIZED_HUB_SLUGS = ["chicago", "austin", "st-louis"] as const;
 
 /**
  * Primary homepage strip — explicit 8-card order (not DB `sortOrder`).
@@ -157,6 +231,11 @@ export type HomepageStripSlug = (typeof HOMEPAGE_STRIP)[number]["slug"];
 export type HomepageStripEntry = (typeof HOMEPAGE_STRIP)[number];
 
 export const HOMEPAGE_STRIP_SLUGS = HOMEPAGE_STRIP.map((item) => item.slug);
+
+/** Hubs that stay at `/cities/{slug}` but are not in the primary homepage strip. */
+export const DEPRIORITIZED_HUB_SLUGS = WAVE1_HUB_SLUGS.filter(
+  (slug) => !(HOMEPAGE_STRIP_SLUGS as readonly string[]).includes(slug),
+);
 
 /** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
 export const HOMEPAGE_SERVICE_CHIPS = [
@@ -245,4 +324,57 @@ export function buildHomepageStrip(cities: HomepageStripCity[]) {
       count: city?.listings?.length ?? 0,
     };
   });
+}
+
+type CityIndexRow = HomepageStripCity & { id?: string };
+
+/**
+ * `/cities` catalog: every Wave 1 hub, then any extra imported metros.
+ * Homepage strip stays `HOMEPAGE_STRIP` — do not use this for the 8-card home grid.
+ */
+export function buildCityIndex(cities: CityIndexRow[]) {
+  const bySlug = new Map(cities.map((city) => [city.slug, city]));
+  const wave1 = WAVE1_HUBS.map((hub) => {
+    const city = bySlug.get(hub.slug);
+    return {
+      id: city?.id ?? `catalog:${hub.slug}`,
+      slug: hub.slug,
+      name: city?.name ?? hub.name,
+      state: city?.state ?? hub.state,
+      region: city?.region ?? hub.region,
+      heroImage: city?.heroImage ?? null,
+      listings: city?.listings ?? [],
+      count: city?.listings?.length ?? 0,
+    };
+  });
+  const extras = cities
+    .filter((city) => !(WAVE1_HUB_SLUGS as readonly string[]).includes(city.slug))
+    .map((city) => ({
+      id: city.id ?? city.slug,
+      slug: city.slug,
+      name: city.name,
+      state: city.state,
+      region: city.region,
+      heroImage: city.heroImage ?? null,
+      listings: city.listings ?? [],
+      count: city.listings?.length ?? 0,
+    }));
+  return [...wave1, ...extras];
+}
+
+/** Seed/DB city shape when a Wave 1 slug has no row yet — keeps hub routes live. */
+export function catalogCityFallback(slug: string) {
+  const hub = getWave1Hub(slug);
+  if (!hub) return null;
+  return {
+    id: `catalog:${hub.slug}`,
+    slug: hub.slug,
+    name: hub.name,
+    state: hub.state,
+    region: hub.region,
+    description: hub.description,
+    heroImage: null as string | null,
+    sortOrder: WAVE1_HUBS.findIndex((item) => item.slug === hub.slug),
+    listings: [] as { listing: unknown }[],
+  };
 }
