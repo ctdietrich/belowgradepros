@@ -43,38 +43,32 @@ Dropped vs FTF: `NewsletterSignup`, `LastMinuteOpening`, Beehiiv env, `/last-min
 
 ## URL map
 
+Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/belowgradepros/seo/hub-outlines.md` was not in this workspace).
+
 | Path | Purpose |
 | --- | --- |
-| `/` | Featured listings, city hubs, demand/supply desk |
-| `/cities` | Metro hubs |
-| `/cities/{slug}` | Contractors in one Wave 1 metro |
-| `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation (+ `both`) |
+| `/` | Home |
+| `/cities/houston` | Wave 1 hub |
+| `/cities/dallas-fort-worth` | Wave 1 hub |
+| `/cities/atlanta` | Wave 1 hub |
+| `/cities/tampa` | Wave 1 hub (not `tampa-bay`) |
+| `/cities/chicago` | Wave 1 hub |
+| `/cities/charlotte` | Wave 1 hub |
+| `/cities/austin` | Wave 1 hub |
+| `/cities/st-louis` | Wave 1 hub |
+| `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`) |
 | `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`) |
-| `/contractors` | All contractors + filters |
-| `/services` | Primary-desk index |
-| `/services/foundation` · `/services/encapsulation` | Primary flag browse (includes `both`) |
 | `/l/{slug}` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
 | `/founding` | Founding / featured Stripe stub |
-| `/about` | What the product is (and is not) |
-| `/admin` | Password-gated CRUD (`ADMIN_PASSWORD`) |
-| `/admin/import` | Signed-in CSV upsert |
+| `/admin` | Admin-lite publish |
+| `/contractors` | Extra browse (all contractors) |
+| `/services` · `/services/foundation` · `/services/encapsulation` | Extra browse (primary desk only) |
 
-FTF `/destinations` is `/cities`. Listing URLs stay `/l/{slug}`. Do **not** add `/c/waterproofing` or mold categories in v1.
+There is no `/c/waterproofing`, mold category, `/cities/tampa-bay`, `/last-minute`, `/guides`, or `/lodges`.
 
-### Wave 1 city slugs (SEO lock, publish / seed order)
-
-1. `houston`
-2. `dallas-fort-worth`
-3. `atlanta`
-4. `tampa` (not `tampa-bay`)
-5. `chicago`
-6. `charlotte`
-7. `austin`
-8. `st-louis`
-
-Prefer density on the first five: Houston → DFW → Atlanta → Tampa → Chicago.
+Seed / `sortOrder` prefers density on the first five: Houston → DFW → Atlanta → Tampa → Chicago, then Charlotte, Austin, St. Louis.
 
 A listing with `primaryService=both` appears in **both** hub service filters.
 
@@ -96,7 +90,7 @@ Applied in `src/app/globals.css`, `src/lib/config.ts`, and `src/components/Brand
 
 1. **Brand** — `src/lib/config.ts` (`name`, `domain`, `tagline`, `listingTypes`, service vocabulary) and `src/app/globals.css` (palette + fonts in `src/app/layout.tsx`).
 2. **Types** — `site.listingTypes` (one `contractor` key). Listing URLs stay `/l/[slug]`.
-3. **Taxonomy** — Wave 1 hubs in `src/lib/config.ts` (`WAVE1_CITIES`) and `prisma/seed.ts`.
+3. **Taxonomy** — Wave 1 hubs in `src/lib/hubs.ts` (`WAVE1_HUBS`) and `prisma/seed.ts`.
 4. **Copy** — `src/app/page.tsx`, `src/app/about/page.tsx`.
 5. **SEO** — `src/lib/jsonld.ts` (schema.org types), `src/app/sitemap.ts`, `src/app/robots.ts`.
 6. **Admin** — already generic CRUD. Inbox tables follow submissions and claims.
@@ -148,7 +142,8 @@ src/app/admin/(console)/import  ADMIN_PASSWORD-gated CSV upload
 src/app/founding/page.tsx     founding CTA + stub checkout
 data/hero-seed.sample.csv     expected import columns
 docs/import-listings.md       column aliases + production runbook
-src/lib/config.ts             brand + Wave 1 + primary/badge vocabulary
+src/lib/hubs.ts               Wave 1 slugs, hub titles/meta
+src/lib/config.ts             brand + types (clone here first)
 src/lib/listings.ts           public queries
 src/lib/listing-status.ts     published aliases (candidate/ready)
 src/lib/admin.ts              password cookie

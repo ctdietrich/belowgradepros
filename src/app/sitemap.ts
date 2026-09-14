@@ -32,10 +32,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticRoutes,
-    ...cities.map((city) => ({
-      url: absoluteUrl(cityPath(city.slug)),
-      lastModified: new Date(),
-    })),
+    ...cities.flatMap((city) => {
+      const lastModified = new Date();
+      return [
+        { url: absoluteUrl(cityPath(city.slug)), lastModified },
+        { url: absoluteUrl(cityPath(city.slug, "foundation-repair")), lastModified },
+        { url: absoluteUrl(cityPath(city.slug, "encapsulation")), lastModified },
+      ];
+    }),
     ...listings.map((listing) => ({
       url: absoluteUrl(listingPath(listing.slug)),
       lastModified: listing.updatedAt,

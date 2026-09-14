@@ -53,17 +53,8 @@ export const SERVICE_KEYS = [
   ...ADDITIONAL_SERVICES.map((item) => item.key),
 ] as const;
 
-/** Wave 1 city hubs — SEO lock, publish order. */
-export const WAVE1_CITIES = [
-  { slug: "houston", name: "Houston", state: "TX", region: "Gulf Coast" },
-  { slug: "dallas-fort-worth", name: "Dallas–Fort Worth", state: "TX", region: "North Texas" },
-  { slug: "atlanta", name: "Atlanta", state: "GA", region: "Southeast" },
-  { slug: "tampa", name: "Tampa", state: "FL", region: "Gulf Coast" },
-  { slug: "chicago", name: "Chicago", state: "IL", region: "Midwest" },
-  { slug: "charlotte", name: "Charlotte", state: "NC", region: "Carolinas" },
-  { slug: "austin", name: "Austin", state: "TX", region: "Central Texas" },
-  { slug: "st-louis", name: "St. Louis", state: "MO", region: "Midwest" },
-] as const;
+/** Wave 1 city hubs — SEO lock, publish order. Re-exported from `hubs.ts`. */
+export { WAVE1_CITIES, WAVE1_HUBS, WAVE1_HUB_SLUGS, getWave1Hub, hubPageTitle } from "./hubs";
 
 export const brand = {
   slate: "#1E293B",

@@ -20,6 +20,7 @@ import {
   summarizeImport,
   type ImportListingsOptions,
 } from "../src/lib/import-listings";
+import { WAVE1_HUB_SLUGS } from "../src/lib/hubs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, "..");
@@ -162,6 +163,13 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   }
   if (!matchCity("Tampa Bay", [{ id: "2", slug: "tampa", name: "Tampa" }])) {
     throw new Error("alias Tampa Bay");
+  }
+
+  if (
+    WAVE1_HUB_SLUGS.join(",") !==
+    "houston,dallas-fort-worth,atlanta,tampa,chicago,charlotte,austin,st-louis"
+  ) {
+    throw new Error("Wave 1 seed order must be Houston → DFW → Atlanta → Tampa → Chicago …");
   }
 
   const samplePath = resolve(repoRoot, "data/hero-seed.sample.csv");

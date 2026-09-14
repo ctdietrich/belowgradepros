@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { WAVE1_CITIES } from "../src/lib/config";
+import { WAVE1_HUBS } from "../src/lib/hubs";
 
 // Destructive sample data. For curated hero CSVs use `npm run import:listings`
 // (see docs/import-listings.md). Seed wipes listings; the importer upserts.
@@ -9,47 +9,15 @@ const prisma = new PrismaClient();
 const img = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=80`;
 
-const hubCopy: Record<string, { description: string; heroImage: string }> = {
-  houston: {
-    description:
-      "Houston foundation repair and crawl-space encapsulation contractors. Clay soils, pier-and-beam bungalows, and slab suburbs from the Energy Corridor to the Bay.",
-    heroImage: img("photo-1531218150217-54595bc2b934"),
-  },
-  "dallas-fort-worth": {
-    description:
-      "Dallas–Fort Worth foundation repair and encapsulation contractors. Expansive North Texas clay, post-tension slabs, and older pier-and-beam neighborhoods.",
-    heroImage: img("photo-1541829070764-84a7d30dd3f3"),
-  },
-  atlanta: {
-    description:
-      "Atlanta foundation repair and encapsulation contractors. Piedmont clay, crawl-space ranch houses, and a growing slab ring around the perimeter.",
-    heroImage: img("photo-1570129477492-45c003edd2be"),
-  },
-  tampa: {
-    description:
-      "Tampa foundation repair and encapsulation contractors. High water tables, block homes, and crawl spaces that want moisture control as much as structural repair.",
-    heroImage: img("photo-1506905925346-21bda4d32df4"),
-  },
-  chicago: {
-    description:
-      "Chicago foundation repair and encapsulation contractors. Basement waterproofing, older masonry, and clay that moves through freeze-thaw.",
-    heroImage: img("photo-1494522855154-9297acd4f30d"),
-  },
-  charlotte: {
-    description:
-      "Charlotte foundation repair and encapsulation contractors. Piedmont clay, crawl-space stock, and a fast suburban slab ring.",
-    heroImage: img("photo-1600585154340-be6161a56a0c"),
-  },
-  austin: {
-    description:
-      "Austin foundation repair and encapsulation contractors. Hill Country limestone, Edwards clay, and a split between east-side pier-and-beam and west-side slabs.",
-    heroImage: img("photo-1600596542815-ffad4c1539a9"),
-  },
-  "st-louis": {
-    description:
-      "St. Louis foundation repair and encapsulation contractors. Brick basements, limestone, and humidity that keeps encapsulation on the calendar.",
-    heroImage: img("photo-1560518883-ce09059eeffa"),
-  },
+const hubHero: Record<string, string> = {
+  houston: img("photo-1531218150217-54595bc2b934"),
+  "dallas-fort-worth": img("photo-1541829070764-84a7d30dd3f3"),
+  atlanta: img("photo-1570129477492-45c003edd2be"),
+  tampa: img("photo-1506905925346-21bda4d32df4"),
+  chicago: img("photo-1494522855154-9297acd4f30d"),
+  charlotte: img("photo-1600585154340-be6161a56a0c"),
+  austin: img("photo-1600596542815-ffad4c1539a9"),
+  "st-louis": img("photo-1560518883-ce09059eeffa"),
 };
 
 async function main() {
@@ -60,13 +28,16 @@ async function main() {
   await prisma.city.deleteMany();
 
   const cities = await Promise.all(
-    WAVE1_CITIES.map((hub, index) =>
+    WAVE1_HUBS.map((hub, index) =>
       prisma.city.create({
         data: {
-          ...hub,
+          slug: hub.slug,
+          name: hub.name,
+          state: hub.state,
+          region: hub.region,
           sortOrder: index,
-          description: hubCopy[hub.slug].description,
-          heroImage: hubCopy[hub.slug].heroImage,
+          description: hub.description,
+          heroImage: hubHero[hub.slug],
         },
       }),
     ),

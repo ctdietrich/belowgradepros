@@ -9,9 +9,9 @@ import {
   cityPath,
   hubServiceQueryParam,
   normalizeHubServiceQuery,
-  primaryServiceLabel,
   site,
 } from "@/lib/config";
+import { hubPageTitle } from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -30,10 +30,9 @@ export async function generateMetadata({
   if (!city) return { title: "City hub" };
   const filter = normalizeHubServiceQuery(service);
   const query = hubServiceQueryParam(filter);
+  const title = hubPageTitle(city.slug, filter);
   return {
-    title: filter
-      ? `${city.name} ${primaryServiceLabel(filter)} contractors`
-      : `${city.name} foundation repair & encapsulation contractors`,
+    title,
     description: city.description,
     alternates: { canonical: cityPath(city.slug, query ?? undefined) },
   };
@@ -57,13 +56,14 @@ export default async function CityDetailPage({
     service: serviceFilter ?? undefined,
   });
   const others = (await getCities()).filter((item) => item.id !== city.id);
+  const heading = hubPageTitle(city.slug, serviceFilter);
 
   return (
     <main>
       <JsonLd data={cityJsonLd(city)} />
       <PageHero
         kicker={`${city.region} · ${city.state}`}
-        title={city.name}
+        title={heading}
         lede={city.description}
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
