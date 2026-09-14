@@ -3,7 +3,7 @@ import { submitClaim } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
-import { getClaimableListings } from "@/lib/listings";
+import { getClaimableListings, resolveClaimableListing } from "@/lib/listings";
 import { foundingPriceLabel } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,8 @@ export default async function ClaimPage({
 }) {
   const { listing: selected } = await searchParams;
   const listings = await getClaimableListings();
+  // Growth/ops deep links use slug: /claim?listing={slug}. Cuid id still works.
+  const preselected = await resolveClaimableListing(selected);
 
   return (
     <main>
@@ -35,7 +37,7 @@ export default async function ClaimPage({
         <ActionForm action={submitClaim} className="space-y-5" submitLabel="Request claim">
           <label className="block text-sm">
             Listing
-            <select name="listingId" required defaultValue={selected ?? ""} className={field}>
+            <select name="listingId" required defaultValue={preselected?.id ?? ""} className={field}>
               <option value="">Select a claimable profile</option>
               {listings.map((item) => (
                 <option key={item.id} value={item.id}>

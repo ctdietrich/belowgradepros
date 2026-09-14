@@ -172,7 +172,7 @@ export default async function ListingPage({
             </dl>
             {listing.claimable ? (
               <Link
-                href={`/claim?listing=${listing.id}`}
+                href={`/claim?listing=${listing.slug}`}
                 className="mt-6 inline-block text-sm text-slate hover:text-amber-deep"
               >
                 Claim this listing →

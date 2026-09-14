@@ -120,3 +120,11 @@ export async function getClaimableListings() {
     select: { id: true, name: true, type: true, slug: true },
   });
 }
+
+/** Public deep link: `/claim?listing={slug}` (preferred) or `/claim?listing={id}`. Drafts never match. */
+export async function resolveClaimableListing(ref?: string | null) {
+  const value = ref?.trim();
+  if (!value) return null;
+  const listings = await getClaimableListings();
+  return listings.find((item) => item.id === value || item.slug === value) ?? null;
+}

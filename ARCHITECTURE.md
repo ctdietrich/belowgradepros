@@ -61,6 +61,8 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/l/{slug}` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
+| `/claim?listing={slug}` | Preselect a **published + claimable** listing (preferred ops deep link) |
+| `/claim?listing={id}` | Same, using Prisma cuid |
 | `/founding` | Founding / featured Stripe stub |
 | `/admin` | Admin-lite publish |
 | `/contractors` | Extra browse (all contractors) |
