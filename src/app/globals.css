@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --slate: #1e293b;
+  --slate-deep: #0f172a;
+  --slate-soft: #334155;
+  --amber: #d97706;
+  --amber-bright: #f59e0b;
+  --amber-soft: #fde68a;
+  --paper: #f8fafc;
+  --paper-warm: #f4f1ea;
+  --muted: #64748b;
+  --line: #e2e8f0;
+}
+
+@theme inline {
+  --color-slate: var(--slate);
+  --color-slate-deep: var(--slate-deep);
+  --color-slate-soft: var(--slate-soft);
+  --color-amber: var(--amber);
+  --color-amber-bright: var(--amber-bright);
+  --color-amber-soft: var(--amber-soft);
+  --color-paper: var(--paper);
+  --color-paper-warm: var(--paper-warm);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--slate-deep);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+a {
+  text-underline-offset: 0.18em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--amber) 35%, white);
+  color: var(--slate-deep);
+}

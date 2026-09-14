@@ -1,0 +1,73 @@
+// BelowGradePros contractor directory (PostgreSQL via DATABASE_URL).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Metro {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  state       String
+  stateCode   String
+  description String
+  listings    Listing[]
+}
+
+model Listing {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  name        String
+  city        String
+  state       String
+  metro       String
+  metroSlug   String
+  metroHub    Metro          @relation(fields: [metroSlug], references: [slug])
+  phone       String?
+  website     String?
+  email       String?
+  services    Json
+  description String
+  sourceUrl   String?
+  published   Boolean        @default(false)
+  featured    Boolean        @default(false)
+  claimable   Boolean        @default(true)
+  claimedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  claims      ClaimRequest[]
+
+  @@index([published, metroSlug])
+  @@index([state])
+}
+
+model ClaimRequest {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  message   String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
+
+model Submission {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  website     String?
+  phone       String?
+  city        String
+  state       String
+  metro       String
+  services    String
+  description String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+}
