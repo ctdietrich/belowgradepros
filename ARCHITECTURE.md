@@ -73,8 +73,8 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/cities/west-palm-beach` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal; H1 uses full name, not WPB |
 | `/cities/fort-lauderdale` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal; Broward desk, **not** Miami |
 | `/cities/daytona-beach` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal |
-| `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`) |
-| `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`) |
+| `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`). In-app only — **not** in `sitemap.xml` |
+| `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`). In-app only — **not** in `sitemap.xml` |
 | `/l/{slug}` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
@@ -117,7 +117,7 @@ Applied in `src/app/globals.css`, `src/lib/config.ts`, and `src/components/Brand
 2. **Types** — `site.listingTypes` (one `contractor` key). Listing URLs stay `/l/[slug]`.
 3. **Taxonomy** — Wave 1 hubs in `src/lib/hubs.ts` (`WAVE1_HUBS`) and `prisma/seed.ts`.
 4. **Copy** — `src/app/page.tsx`, `src/app/about/page.tsx`.
-5. **SEO** — `src/lib/jsonld.ts` (schema.org types), `src/app/sitemap.ts`, `src/app/robots.ts`.
+5. **SEO** — `src/lib/config.ts` (`resolveSiteUrl`), `src/lib/jsonld.ts`, `src/app/sitemap.ts` (bare `/cities/{slug}` only), `src/app/robots.ts`.
 6. **Admin** — already generic CRUD. Inbox tables follow submissions and claims.
 7. **Founding Stripe** — `src/lib/stripe.ts` + `/founding`. Point `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` at a live Payment Link when ready.
 
@@ -140,7 +140,7 @@ Forms (submit, claim, founding, admin)
 
 The schema provider is `postgresql`. Local and production both use `DATABASE_URL`.
 
-1. Set `DATABASE_URL` (and `ADMIN_PASSWORD`) on Vercel. `NEXT_PUBLIC_SITE_URL` is optional. Stripe vars are optional.
+1. Set `DATABASE_URL` and `ADMIN_PASSWORD` on Vercel. Set `NEXT_PUBLIC_SITE_URL=https://belowgradepros.com` on Production (required for SEO). Production never falls back to `VERCEL_URL` / `*.vercel.app`. Stripe vars are optional.
 2. Deploy. Build is `prisma generate && next build`. Data routes are `force-dynamic` so prerender does not query the database.
 3. Post-deploy: `npx prisma migrate deploy` (or `npm run db:deploy`). Then seed only if you want sample data.
 

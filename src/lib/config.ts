@@ -1,4 +1,5 @@
-const SITE_URL_FALLBACK = "https://belowgradepros.com";
+/** Hard production canonical. Never substitute a *.vercel.app deployment host. */
+export const PRODUCTION_SITE_URL = "https://belowgradepros.com";
 
 function toAbsoluteHttpUrl(value?: string | null): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -19,12 +20,28 @@ function toAbsoluteHttpUrl(value?: string | null): string | undefined {
   }
 }
 
+function isVercelProduction(): boolean {
+  return process.env.VERCEL_ENV === "production";
+}
+
+/**
+ * Canonical origin for metadataBase, Open Graph, robots Sitemap, and sitemap `<loc>`s.
+ *
+ * 1. `NEXT_PUBLIC_SITE_URL` always wins when set (production should be https://belowgradepros.com).
+ * 2. On Vercel Production, never fall back to `VERCEL_URL` — that is the unique
+ *    `*.vercel.app` deployment host, not the custom domain.
+ * 3. Preview / local may use `VERCEL_URL` when the public env is unset.
+ * 4. Otherwise hard-default to {@link PRODUCTION_SITE_URL}.
+ */
 export function resolveSiteUrl(): string {
-  return (
-    toAbsoluteHttpUrl(process.env.NEXT_PUBLIC_SITE_URL) ??
-    toAbsoluteHttpUrl(process.env.VERCEL_URL) ??
-    SITE_URL_FALLBACK
-  );
+  const fromPublicEnv = toAbsoluteHttpUrl(process.env.NEXT_PUBLIC_SITE_URL);
+  if (fromPublicEnv) return fromPublicEnv;
+
+  if (isVercelProduction()) {
+    return PRODUCTION_SITE_URL;
+  }
+
+  return toAbsoluteHttpUrl(process.env.VERCEL_URL) ?? PRODUCTION_SITE_URL;
 }
 
 /** Primary desk: foundation | encapsulation | both. */
@@ -89,7 +106,9 @@ export const brand = {
 export const site = {
   name: "BelowGradePros",
   domain: "belowgradepros.com",
-  url: resolveSiteUrl(),
+  get url() {
+    return resolveSiteUrl();
+  },
   tagline: brand.tagline,
   brandTagline: brand.tagline,
   description:
@@ -108,6 +127,7 @@ export function listingPath(slug: string) {
   return `/l/${slug}`;
 }
 
+/** Bare hub path `/cities/{slug}`. Pass `service` only for in-app filter links — not sitemap. */
 export function cityPath(slug: string, service?: string) {
   if (!service) return `/cities/${slug}`;
   return `/cities/${slug}?service=${encodeURIComponent(service)}`;
@@ -121,7 +141,9 @@ export function servicePath(key: string) {
 }
 
 export function absoluteUrl(path = "") {
-  return `${site.url.replace(/\/$/, "")}${path}`;
+  const base = resolveSiteUrl().replace(/\/$/, "");
+  if (!path) return base;
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function typeLabel(type: string) {

@@ -33,19 +33,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const citySlugs = [...new Set([...WAVE1_HUB_SLUGS, ...cities.map((city) => city.slug)])];
 
+  // Index the bare hub only. In-app `?service=` filters stay off the sitemap.
+  const cityRoutes = citySlugs.map((slug) => ({
+    url: absoluteUrl(cityPath(slug)),
+    lastModified: new Date(),
+  }));
+
   return [
     ...staticRoutes,
-    ...citySlugs.flatMap((slug) => {
-      const lastModified = new Date();
-      return [
-        { url: absoluteUrl(cityPath(slug)), lastModified },
-        { url: absoluteUrl(cityPath(slug, "foundation-repair")), lastModified },
-        { url: absoluteUrl(cityPath(slug, "encapsulation")), lastModified },
-      ];
-    }),
+    ...cityRoutes,
     ...listings.map((listing) => ({
       url: absoluteUrl(listingPath(listing.slug)),
       lastModified: listing.updatedAt,
     })),
-  ];
+  ].filter((entry) => !entry.url.includes("?"));
 }
