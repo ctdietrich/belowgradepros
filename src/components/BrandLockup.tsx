@@ -16,13 +16,13 @@ function Wordmark({
   onPaper?: boolean;
 }) {
   const base = compact ? "text-lg leading-none md:text-xl" : "text-2xl leading-none md:text-3xl";
-  const grade = onPaper || !onDark ? "text-slate-deep" : "text-page";
-  const pros = "text-amber";
+  const grade = onPaper || !onDark ? "text-slate" : "text-page";
+  const pros = "font-extrabold text-amber";
 
   return (
     <span className={`font-display tracking-tight ${base}`}>
       <span className={`font-semibold ${grade}`}>BelowGrade</span>
-      <span className={`font-extrabold ${pros}`}>Pros</span>
+      <span className={pros}>Pros</span>
     </span>
   );
 }

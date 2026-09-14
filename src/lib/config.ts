@@ -65,12 +65,21 @@ export const WAVE1_CITIES = [
   { slug: "st-louis", name: "St. Louis", state: "MO", region: "Midwest" },
 ] as const;
 
+export const brand = {
+  slate: "#1E293B",
+  deep: "#0F172A",
+  concrete: "#C9B8A6",
+  amber: "#D97706",
+  page: "#F7F4F0",
+  tagline: "Solid ground starts below grade.",
+} as const;
+
 export const site = {
   name: "BelowGradePros",
   domain: "belowgradepros.com",
   url: resolveSiteUrl(),
-  tagline: "Solid ground starts below grade.",
-  brandTagline: "Solid ground starts below grade.",
+  tagline: brand.tagline,
+  brandTagline: brand.tagline,
   description:
     "A curated national directory of foundation repair and crawl-space / basement encapsulation contractors — Wave 1 metros first.",
   listingTypes: [

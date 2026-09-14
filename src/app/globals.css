@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Brand lock — slate #1E293B / deep #0F172A, concrete #C9B8A6, amber #D97706, page #F7F4F0 */
 :root {
   --slate: #1e293b;
   --slate-deep: #0f172a;
