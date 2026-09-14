@@ -48,14 +48,17 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | Path | Purpose |
 | --- | --- |
 | `/` | Home |
-| `/cities/houston` | Wave 1 hub |
-| `/cities/dallas-fort-worth` | Wave 1 hub |
-| `/cities/atlanta` | Wave 1 hub |
-| `/cities/tampa` | Wave 1 hub (not `tampa-bay`) |
-| `/cities/chicago` | Wave 1 hub |
-| `/cities/charlotte` | Wave 1 hub |
-| `/cities/austin` | Wave 1 hub |
-| `/cities/st-louis` | Wave 1 hub |
+| `/cities/tampa` | Wave 1 hub (not `tampa-bay`); homepage strip #1, moisture |
+| `/cities/houston` | Wave 1 hub; homepage strip #2, moisture |
+| `/cities/atlanta` | Wave 1 hub; homepage strip #3, moisture |
+| `/cities/charlotte` | Wave 1 hub; homepage strip #4, moisture |
+| `/cities/jacksonville` | Wave 1 hub; homepage strip #5, moisture |
+| `/cities/orlando` | Wave 1 hub; homepage strip #6, moisture |
+| `/cities/nashville` | Wave 1 hub; homepage strip #7, moisture |
+| `/cities/dallas-fort-worth` | Wave 1 hub; homepage strip #8, foundation-first (pier & beam / clay) |
+| `/cities/chicago` | Wave 1 hub (kept; not in primary homepage strip) |
+| `/cities/austin` | Wave 1 hub (kept; not in primary homepage strip) |
+| `/cities/st-louis` | Wave 1 hub (kept; not in primary homepage strip) |
 | `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`) |
 | `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`) |
 | `/l/{slug}` | Listing detail + JSON-LD |
@@ -68,9 +71,15 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/contractors` | Extra browse (all contractors) |
 | `/services` · `/services/foundation` · `/services/encapsulation` | Extra browse (primary desk only) |
 
-There is no `/c/waterproofing`, mold category, `/cities/tampa-bay`, `/last-minute`, `/guides`, or `/lodges`.
+There is no `/c/waterproofing`, mold category, `/cities/tampa-bay`, `/cities/miami`, `/last-minute`, `/guides`, or `/lodges`.
 
-Seed / `sortOrder` prefers density on the first five: Houston → DFW → Atlanta → Tampa → Chicago, then Charlotte, Austin, St. Louis.
+The **homepage strip** is an explicit 8-card list in `src/lib/hubs.ts` (`HOMEPAGE_STRIP`) — not City `sortOrder` and not `getCities()` alone:
+
+Tampa → Houston → Atlanta → Charlotte → Jacksonville → Orlando → Nashville → Dallas–Fort Worth.
+
+Moisture cards default to `?service=encapsulation` and keep a foundation chip. DFW is foundation-first (`?service=foundation-repair`) with a pier & beam chip to `/cities/dallas-fort-worth` (no pier-and-beam category URL). Homepage service chips: encapsulation → Tampa encapsulation, foundation → Houston foundation-repair, pier & beam → DFW.
+
+Chicago, Austin, and St. Louis stay as `/cities/{slug}` hubs and are **not** in the primary strip. Do not auto-add Miami. Seed `sortOrder` still follows `WAVE1_HUBS` array order for the catalog.
 
 A listing with `primaryService=both` appears in **both** hub service filters.
 
@@ -136,7 +145,7 @@ JSON columns (`photos`, `services`) map to `JSONB`.
 
 ```
 prisma/schema.prisma          models
-prisma/seed.ts                8 Wave 1 hubs + sample listings (destructive)
+prisma/seed.ts                Wave 1 hubs + sample listings (destructive; 8-card homepage strip is config, not seed order)
 scripts/import-listings.ts    CLI wrapper around the shared importer
 src/lib/import-listings.ts    shared CSV parse + upsert (CLI + /admin/import)
 src/lib/stripe.ts             founding price + Payment Link helpers (no SDK)

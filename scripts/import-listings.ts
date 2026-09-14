@@ -20,7 +20,14 @@ import {
   summarizeImport,
   type ImportListingsOptions,
 } from "../src/lib/import-listings";
-import { WAVE1_HUB_SLUGS } from "../src/lib/hubs";
+import {
+  DEPRIORITIZED_HUB_SLUGS,
+  HOMEPAGE_SERVICE_CHIPS,
+  HOMEPAGE_STRIP_SLUGS,
+  WAVE1_HUB_SLUGS,
+  homepageCardChips,
+  homepageCardHref,
+} from "../src/lib/hubs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, "..");
@@ -189,18 +196,60 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if (!matchCity("dallas-fort-worth", wave1)) throw new Error("metro_slug dallas-fort-worth");
   if (!matchCity("tampa", wave1)) throw new Error("metro_slug tampa");
   if (!matchCity("st-louis", wave1)) throw new Error("metro_slug st-louis");
+  if (!matchCity("jacksonville", wave1)) throw new Error("metro_slug jacksonville");
+  if (!matchCity("orlando", wave1)) throw new Error("metro_slug orlando");
+  if (!matchCity("nashville", wave1)) throw new Error("metro_slug nashville");
   if (!matchCity("Dallas", [{ id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" }])) {
     throw new Error("alias Dallas");
   }
   if (!matchCity("Tampa Bay", [{ id: "2", slug: "tampa", name: "Tampa" }])) {
     throw new Error("alias Tampa Bay");
   }
+  if (!matchCity("JAX", [{ id: "3", slug: "jacksonville", name: "Jacksonville" }])) {
+    throw new Error("alias JAX");
+  }
 
   if (
-    WAVE1_HUB_SLUGS.join(",") !==
-    "houston,dallas-fort-worth,atlanta,tampa,chicago,charlotte,austin,st-louis"
+    HOMEPAGE_STRIP_SLUGS.join(",") !==
+    "tampa,houston,atlanta,charlotte,jacksonville,orlando,nashville,dallas-fort-worth"
   ) {
-    throw new Error("Wave 1 seed order must be Houston → DFW → Atlanta → Tampa → Chicago …");
+    throw new Error("Homepage strip must be Tampa → Houston → Atlanta → Charlotte → JAX → Orlando → Nashville → DFW");
+  }
+  const hubSlugs = WAVE1_HUB_SLUGS as readonly string[];
+  const stripSlugs = HOMEPAGE_STRIP_SLUGS as readonly string[];
+  for (const slug of DEPRIORITIZED_HUB_SLUGS) {
+    if (!hubSlugs.includes(slug)) throw new Error(`${slug} must remain a Wave 1 hub page`);
+    if (stripSlugs.includes(slug)) throw new Error(`${slug} must stay off the homepage strip`);
+  }
+  if (hubSlugs.includes("miami")) {
+    throw new Error("Do not auto-add Miami");
+  }
+  if (!hubSlugs.includes("jacksonville") || !hubSlugs.includes("orlando") || !hubSlugs.includes("nashville")) {
+    throw new Error("Jacksonville, Orlando, and Nashville must exist as Wave 1 hubs");
+  }
+  if (HOMEPAGE_SERVICE_CHIPS[0]?.href !== "/cities/tampa?service=encapsulation") {
+    throw new Error("Encapsulation chip must target Tampa encapsulation");
+  }
+  if (HOMEPAGE_SERVICE_CHIPS[1]?.href !== "/cities/houston?service=foundation-repair") {
+    throw new Error("Foundation chip must target Houston foundation-repair");
+  }
+  if (HOMEPAGE_SERVICE_CHIPS[2]?.href !== "/cities/dallas-fort-worth") {
+    throw new Error("Pier & beam chip must target DFW hub");
+  }
+  if (homepageCardHref("tampa") !== "/cities/tampa?service=encapsulation") {
+    throw new Error("Tampa strip card must default to encapsulation");
+  }
+  if (homepageCardHref("houston") !== "/cities/houston?service=encapsulation") {
+    throw new Error("Houston strip card must default to encapsulation");
+  }
+  if (homepageCardHref("dallas-fort-worth") !== "/cities/dallas-fort-worth?service=foundation-repair") {
+    throw new Error("DFW strip card must default to foundation-repair");
+  }
+  if (!homepageCardChips("tampa").some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
+    throw new Error("Tampa must keep a foundation chip");
+  }
+  if (!homepageCardChips("dallas-fort-worth").some((chip) => chip.label === "Pier & beam")) {
+    throw new Error("DFW must keep a pier & beam chip");
   }
 
   const samplePath = resolve(repoRoot, "data/hero-seed.sample.csv");
