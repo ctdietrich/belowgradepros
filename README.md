@@ -2,13 +2,13 @@
 
 **[belowgradepros.com](https://belowgradepros.com)** is a **foundation repair + crawl-space/basement encapsulation directory**.
 
-- **Supply:** licensed contractors (foundation repair, encapsulation, waterproofing, pier-and-beam, slab)
+- **Supply:** licensed contractors (primary desk: foundation, encapsulation, or both)
 - **Demand:** homeowners, property managers, and desks who need a specialty operator
-- **Geography:** US national, metro hubs first (Texas and Florida in v1)
+- **Geography:** US national, Wave 1 metros first
 
 This repository is the directory application, cloned from the [FishTheFlats](https://github.com/ctdietrich/fishtheflats) Next.js + Prisma kit. It is **not** a booking engine, contractor SaaS, or newsletter product.
 
-Interim brand: typographic wordmark **BelowGradePros**, slate / concrete / amber, page cream.
+Brand lock: typographic wordmark **BelowGrade** (slate) + **Pros** (amber, heavier). Tagline: **Solid ground starts below grade.** Palette is slate / deep slate / concrete / amber on page cream.
 
 ## Stack
 
@@ -20,20 +20,23 @@ Interim brand: typographic wordmark **BelowGradePros**, slate / concrete / amber
 
 | Path | Purpose |
 | --- | --- |
-| `/` | Featured listings, city hubs, demand/supply desk |
+| `/` | Featured listings, Wave 1 city hubs, demand/supply desk |
 | `/cities` | Metro hubs |
-| `/cities/[slug]` | Contractors in one metro |
+| `/cities/[slug]` | Contractors in one metro (`?service=foundation-repair\|encapsulation`) |
 | `/contractors` | All contractors + filters |
-| `/services` | Service flag index |
-| `/services/[slug]` | Browse by service |
+| `/services` | Primary-desk index (foundation, encapsulation) |
+| `/services/foundation` · `/services/encapsulation` | Browse by primary flag (includes `both`) |
 | `/l/[slug]` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
+| `/founding` | Founding / featured upgrade ($199–299/mo Stripe stub) |
 | `/about` | What the product is (and is not) |
 | `/admin` | Password-gated CRUD (`ADMIN_PASSWORD`) |
 | `/admin/import` | Signed-in CSV upsert (same logic as `npm run import:listings`) |
 
-FTF `/destinations` is `/cities`. There is no `/last-minute`, `/guides`, `/lodges`, or Beehiiv.
+FTF `/destinations` is `/cities`. There is no `/last-minute`, `/guides`, `/lodges`, `/c/waterproofing`, or Beehiiv.
+
+Wave 1 hub slugs (publish order): `houston` → `dallas-fort-worth` → `atlanta` → `tampa` → `chicago` → `charlotte` → `austin` → `st-louis`. Tampa is `tampa`, not `tampa-bay`.
 
 ## Local setup
 
@@ -53,7 +56,7 @@ Then open [http://localhost:3000](http://localhost:3000).
 Admin: [http://localhost:3000/admin](http://localhost:3000/admin)  
 Default local password is `change-me` (set `ADMIN_PASSWORD` in `.env`).
 
-Seed data uses **@example.com** addresses only and includes 19 sample contractors across Houston, Dallas–Fort Worth, Austin, San Antonio, Tampa Bay, Orlando, Jacksonville, and Miami–Fort Lauderdale.
+Seed data uses **@example.com** addresses only and includes 17 published contractors plus 1 draft across the eight Wave 1 hubs.
 
 ## Environment
 
@@ -62,8 +65,13 @@ Seed data uses **@example.com** addresses only and includes 19 sample contractor
 | `DATABASE_URL` | **Required.** Postgres connection string |
 | `ADMIN_PASSWORD` | **Required** in production. Shared password for `/admin` |
 | `NEXT_PUBLIC_SITE_URL` | Optional. Canonical site URL for metadata, sitemap, and JSON-LD |
+| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Founding Payment Link. Preview builds work when empty. |
+| `STRIPE_PAYMENT_LINK` | Optional. Server-side alias for the same Payment Link |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional. Placeholder for a future Checkout session |
+| `STRIPE_SECRET_KEY` | Optional. Placeholder; not required to build |
+| `STRIPE_FOUNDING_PRICE_ID` | Optional. Placeholder for a future Checkout price |
 
-No Beehiiv (or other newsletter) variables.
+No Stripe npm package. No Beehiiv (or other newsletter) variables. Empty Stripe vars keep `/founding` on a notify stub.
 
 ## Deploy on Vercel
 
@@ -74,6 +82,7 @@ Set these project environment variables (Production, and Preview if you want tho
 | `DATABASE_URL` | Yes | Postgres URL from Vercel Postgres, Neon, Supabase, or any host. Use a pooled URL for the app if the provider offers one. |
 | `ADMIN_PASSWORD` | Yes | Shared `/admin` password |
 | `NEXT_PUBLIC_SITE_URL` | No | e.g. `https://belowgradepros.com`. If unset, the app falls back to `VERCEL_URL` or `https://belowgradepros.com` |
+| Stripe Payment Link / keys | No | Founding CTA stays stubbed until a link is set |
 
 Build already runs `prisma generate && next build`. Database pages are `force-dynamic`, so Next does not prerender them at build time. `DATABASE_URL` must still be present so Prisma can generate the client; a missing or invalid database fails at **runtime**, not during compile.
 
@@ -118,10 +127,11 @@ npm run lint
 
 ## Product boundaries
 
-- No Stripe / founding paid checkout
+- Stripe founding path is a **stub** ($199–299/mo Payment Link placeholder). Live Checkout is out of scope until keys exist.
 - No contractor auth beyond the claim inbox
 - No Beehiiv / newsletter product
 - No booking engine
+- Waterproofing / pier-and-beam / slab are **badges**, not category URLs
 
 Operators inquire directly. BelowGradePros publishes the desk.
 

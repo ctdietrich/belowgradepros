@@ -73,6 +73,7 @@ export default async function AdminPage() {
                   <td className="px-4 py-3">{listing.status}</td>
                   <td className="px-4 py-3 text-xs text-muted">
                     {[
+                      listing.founding ? "founding" : null,
                       listing.featured ? "featured" : null,
                       listing.verified ? "verified" : null,
                       listing.claimable ? "claimable" : null,
@@ -102,7 +103,7 @@ export default async function AdminPage() {
           rows={submissions.map((item) => ({
             id: item.id,
             kind: "submission" as const,
-            title: `${item.name} · ${item.type}`,
+            title: `${item.name} · ${item.primaryService}${item.founding ? " · founding" : ""}`,
             detail: item.email,
             status: item.status,
             body: item.bio,
@@ -115,7 +116,7 @@ export default async function AdminPage() {
             id: item.id,
             kind: "claim" as const,
             title: item.listing.name,
-            detail: `${item.name} · ${item.email}`,
+            detail: `${item.name} · ${item.email}${item.founding ? " · founding" : ""}`,
             status: item.status,
             body: item.message,
           }))}

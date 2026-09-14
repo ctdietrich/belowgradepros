@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl, cityPath, listingPath, servicePath, SERVICE_KEYS } from "@/lib/config";
+import { absoluteUrl, cityPath, listingPath } from "@/lib/config";
 import { publishedListingWhere } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
 
@@ -19,10 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/cities",
     "/contractors",
     "/services",
+    "/services/foundation",
+    "/services/encapsulation",
     "/submit",
     "/claim",
+    "/founding",
     "/about",
-    ...SERVICE_KEYS.map((key) => servicePath(key)),
   ].map((path) => ({
     url: absoluteUrl(path),
     lastModified: new Date(),

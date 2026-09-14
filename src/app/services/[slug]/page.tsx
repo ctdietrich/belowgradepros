@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { FilterBar } from "@/components/FilterBar";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHero } from "@/components/PageHero";
-import { SERVICE_KEYS, serviceLabel, servicePath } from "@/lib/config";
+import {
+  normalizeHubServiceQuery,
+  primaryServiceLabel,
+  servicePath,
+} from "@/lib/config";
 import { getCities, getPublishedListings } from "@/lib/listings";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +18,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  if (!SERVICE_KEYS.includes(slug as (typeof SERVICE_KEYS)[number])) {
-    return { title: "Service" };
-  }
+  const service = normalizeHubServiceQuery(slug);
+  if (!service) return { title: "Service" };
   return {
-    title: serviceLabel(slug),
-    description: `${serviceLabel(slug)} contractors in the BelowGradePros directory.`,
-    alternates: { canonical: servicePath(slug) },
+    title: primaryServiceLabel(service),
+    description: `${primaryServiceLabel(service)} contractors in the BelowGradePros directory.`,
+    alternates: { canonical: servicePath(service) },
   };
 }
 
@@ -32,12 +35,13 @@ export default async function ServiceDetailPage({
   searchParams: Promise<{ q?: string; city?: string }>;
 }) {
   const { slug } = await params;
-  if (!SERVICE_KEYS.includes(slug as (typeof SERVICE_KEYS)[number])) notFound();
+  const service = normalizeHubServiceQuery(slug);
+  if (!service) notFound();
 
   const filters = await searchParams;
   const [listings, cities] = await Promise.all([
     getPublishedListings({
-      service: slug,
+      service,
       query: filters.q,
       citySlug: filters.city,
     }),
@@ -47,15 +51,15 @@ export default async function ServiceDetailPage({
   return (
     <main>
       <PageHero
-        kicker="Service"
-        title={serviceLabel(slug)}
-        lede="Contractors who list this flag. Many shops do more than one — check the listing for the full set."
+        kicker="Primary service"
+        title={primaryServiceLabel(service)}
+        lede="Includes contractors whose primary flag is this trade, plus shops marked both."
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
         <FilterBar
-          action={servicePath(slug)}
+          action={servicePath(service)}
           cities={cities}
-          current={{ ...filters, service: slug }}
+          current={{ ...filters, service }}
         />
         <p className="mt-6 text-sm text-muted">{listings.length} published contractors</p>
         <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">

@@ -123,7 +123,9 @@ Draft Slab Shop,Austin,TX,Austin,slab,"Draft row.",not-an-email,,,draft,,
   if (candidate.type !== "contractor") throw new Error("expected contractor");
   if (candidate.claimable !== true) throw new Error("claimable yes");
   if (!candidate.cityNames.includes("Houston")) throw new Error("metro");
-  if (!candidate.services.includes("foundation_repair")) throw new Error("service flag");
+  if (candidate.primaryService !== "foundation") throw new Error("primary foundation");
+  if (!candidate.services.includes("pier_beam")) throw new Error("badge pier_beam");
+  if (candidate.founding !== false) throw new Error("founding defaults false");
   if (candidate.licenseId !== "TX-FR-10001") throw new Error("license_id");
   if (candidate.homeCity !== "Houston" || candidate.homeState !== "TX") throw new Error("city/state");
 
@@ -132,7 +134,8 @@ Draft Slab Shop,Austin,TX,Austin,slab,"Draft row.",not-an-email,,,draft,,
   if (ready.status !== "published") throw new Error("ready should publish");
   if (ready.website !== "https://example.com/bayou") throw new Error("website protocol");
   if (ready.tagline !== "Crawl-space liner.") throw new Error("notes → tagline");
-  if (ready.services.join(",") !== "encapsulation,waterproofing") throw new Error(`services ${ready.services}`);
+  if (ready.primaryService !== "encapsulation") throw new Error("primary encapsulation");
+  if (ready.services.join(",") !== "waterproofing") throw new Error(`services ${ready.services}`);
 
   const draft = mapRow(rows[2], 2);
   if ("error" in draft) throw new Error(draft.error);
@@ -150,12 +153,15 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if (mappedAlt.name !== "Alias Contractor") throw new Error("tab alias name");
   if (mappedAlt.type !== "contractor") throw new Error("type contractor");
   if (mappedAlt.status !== "published") throw new Error("READY → published");
-  if (!mappedAlt.services.includes("foundation_repair") || !mappedAlt.services.includes("slab")) {
+  if (mappedAlt.primaryService !== "foundation" || !mappedAlt.services.includes("slab")) {
     throw new Error("service aliases");
   }
 
   if (!matchCity("Dallas", [{ id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" }])) {
     throw new Error("alias Dallas");
+  }
+  if (!matchCity("Tampa Bay", [{ id: "2", slug: "tampa", name: "Tampa" }])) {
+    throw new Error("alias Tampa Bay");
   }
 
   const samplePath = resolve(repoRoot, "data/hero-seed.sample.csv");
@@ -174,6 +180,9 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   const candidateMapped = mapRow(candidateRow, 0);
   if ("error" in candidateMapped || candidateMapped.status !== "published") {
     throw new Error("sample candidate row must publish");
+  }
+  if (candidateMapped.primaryService !== "foundation" || !candidateMapped.founding) {
+    throw new Error("sample candidate should be foundation + founding");
   }
   if (sample.rows.some((row) => {
     const email = (row.contact_email || row.email || "").toLowerCase();

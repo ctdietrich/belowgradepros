@@ -32,6 +32,12 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" }) {
             </Link>
           ))}
           <Link
+            href="/founding"
+            className={onDark ? "hover:text-concrete" : "text-slate-soft hover:text-amber-deep"}
+          >
+            Founding
+          </Link>
+          <Link
             href="/submit"
             className={`rounded-full px-3 py-1.5 tracking-[0.16em] ${
               onDark

@@ -6,18 +6,24 @@ type BrandLockupProps = {
   showTagline?: boolean;
 };
 
-function Mark({ className }: { className?: string }) {
+function Wordmark({
+  compact,
+  onDark,
+  onPaper,
+}: {
+  compact: boolean;
+  onDark: boolean;
+  onPaper?: boolean;
+}) {
+  const base = compact ? "text-lg leading-none md:text-xl" : "text-2xl leading-none md:text-3xl";
+  const grade = onPaper || !onDark ? "text-slate-deep" : "text-page";
+  const pros = "text-amber";
+
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className={className}
-      aria-hidden="true"
-      fill="none"
-    >
-      <rect x="3" y="4" width="26" height="10" rx="1.5" fill="#C9B8A6" />
-      <rect x="6" y="16" width="20" height="12" rx="1" fill="#1E293B" />
-      <rect x="6" y="26" width="20" height="3" fill="#D97706" />
-    </svg>
+    <span className={`font-display tracking-tight ${base}`}>
+      <span className={`font-semibold ${grade}`}>BelowGrade</span>
+      <span className={`font-extrabold ${pros}`}>Pros</span>
+    </span>
   );
 }
 
@@ -39,24 +45,11 @@ export function BrandLockup({
     </span>
   ) : null;
 
-  const wordmark = (
-    <span
-      className={`font-display font-semibold tracking-tight ${
-        compact ? "text-lg leading-none md:text-xl" : "text-2xl md:text-3xl"
-      } ${onDark && !compact ? "text-slate-deep" : onDark ? "text-page" : "text-slate-deep"}`}
-    >
-      BelowGradePros
-    </span>
-  );
-
   if (compact) {
     return (
-      <span className="flex items-center gap-2.5">
-        <Mark className="h-9 w-9 shrink-0 md:h-10 md:w-10" />
-        <span className="flex min-w-0 flex-col">
-          {wordmark}
-          {tagline}
-        </span>
+      <span className="flex min-w-0 flex-col">
+        <Wordmark compact onDark={onDark} />
+        {tagline}
       </span>
     );
   }
@@ -64,15 +57,11 @@ export function BrandLockup({
   return (
     <span className="flex min-w-0 flex-col">
       {onDark ? (
-        <span className="inline-flex w-fit items-center gap-3 rounded-2xl bg-page px-3 py-2 md:px-4 md:py-3">
-          <Mark className="h-10 w-10" />
-          {wordmark}
+        <span className="inline-flex w-fit rounded-2xl bg-page px-3 py-2 md:px-4 md:py-3">
+          <Wordmark compact={false} onDark onPaper />
         </span>
       ) : (
-        <span className="inline-flex items-center gap-3">
-          <Mark className="h-12 w-12" />
-          {wordmark}
-        </span>
+        <Wordmark compact={false} onDark={false} />
       )}
       {tagline}
     </span>

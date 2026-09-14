@@ -44,7 +44,9 @@ Ops-folder columns (align with seed fields):
 | city | `homeCity` | `city`, `home_city`, `locality` |
 | state | `homeState` | `state`, `home_state`, `st` |
 | metro | `ListingCity` → `City` | `metro`, `metros`, `hub`, `destination`, `location` |
-| services | `services` (JSON) | `services`, `service`, `service_flags`, `flags` |
+| primary | `primaryService` | `primary`, `primary_service`, `focus`, `desk` |
+| services | `services` (JSON badges) | `services`, `service`, `service_flags`, `flags` |
+| founding | `founding` | `founding`, `founding_listing`, `paid` |
 | phone | `phone` | `phone`, `telephone`, `tel` |
 | website | `website` | `website`, `url`, `web`, `site` |
 | bio | `bio` | `bio`, `description`, `about`, `blurb` |
@@ -66,17 +68,25 @@ There is **no** `notes` column on `Listing`. Notes become the tagline when `tagl
 
 ### Service flags
 
-Stored as a JSON array of keys. Multi-select is allowed (a shop can be `foundation_repair` + `encapsulation`).
+**Primary** is a single column (`primary` / `primary_service`) or inferred from the `services` list:
 
-| Key | Accepted labels |
+| Stored `primaryService` | Accepted labels |
 | --- | --- |
-| `foundation_repair` | Foundation repair, foundation, repair |
+| `foundation` | Foundation, foundation repair, repair |
 | `encapsulation` | Encapsulation, crawl space, crawlspace |
+| `both` | Both, foundation + encapsulation |
+
+If the services list includes both foundation and encapsulation tokens (and no explicit `primary`), the row is stored as `both`. A listing with `both` appears in hub filters `?service=foundation-repair` **and** `?service=encapsulation`.
+
+**Additional badges** stay on `Listing.services` (JSON). They are not category URLs.
+
+| Badge key | Accepted labels |
+| --- | --- |
 | `waterproofing` | Waterproofing, waterproof |
 | `pier_beam` | Pier & beam, pier and beam, pier |
 | `slab` | Slab, slab foundation |
 
-Unknown tokens are dropped with a warning.
+Unknown tokens are dropped with a warning. Do not invent `/c/waterproofing` or mold categories.
 
 ### Status → published
 
@@ -96,7 +106,7 @@ v1 is a single listing type: `contractor`. Blank or unknown `type` values become
 
 ### City hubs
 
-The script matches existing `City` rows by slug, name, and aliases (`DFW` → Dallas–Fort Worth, `Jax` → Jacksonville, `South Florida` → Miami–Fort Lauderdale, and similar).
+The script matches existing `City` rows by slug, name, and Wave 1 aliases (`DFW` → `dallas-fort-worth`, `Tampa Bay` → `tampa`, `St. Louis` → `st-louis`, and similar). Tampa is stored as `tampa`, not `tampa-bay`.
 
 If `metro` is empty, `city` is used as the hub name.
 

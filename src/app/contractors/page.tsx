@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Contractors",
   description:
-    "Foundation repair and encapsulation contractors across Texas and Florida metro hubs.",
+    "Foundation repair and encapsulation contractors across Wave 1 metros.",
 };
 
 export default async function ContractorsPage({
@@ -33,7 +33,7 @@ export default async function ContractorsPage({
       <PageHero
         kicker="Directory"
         title="Contractors"
-        lede="Foundation repair, encapsulation, waterproofing, pier-and-beam, and slab. Inquire directly — BelowGradePros does not take a booking fee."
+        lede="Primary desk is foundation repair, encapsulation, or both. Waterproofing, pier-and-beam, and slab show as badges. Inquire directly — BelowGradePros does not take a booking fee."
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
         <FilterBar action="/contractors" cities={cities} current={filters} />

@@ -45,6 +45,20 @@ export function ListingForm({
           </select>
         </label>
         <label className="text-sm">
+          Primary service
+          <select
+            name="primaryService"
+            defaultValue={listing?.primaryService ?? "foundation"}
+            className={field}
+          >
+            {site.primaryServices.map((service) => (
+              <option key={service.key} value={service.key}>
+                {service.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
           License ID
           <input name="licenseId" defaultValue={listing?.licenseId ?? ""} className={field} />
         </label>
@@ -97,9 +111,9 @@ export function ListingForm({
         </label>
       </div>
       <fieldset>
-        <legend className="text-sm">Services</legend>
+        <legend className="text-sm">Additional badges</legend>
         <div className="mt-2 grid gap-2 md:grid-cols-2">
-          {site.services.map((service) => (
+          {site.additionalServices.map((service) => (
             <label key={service.key} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -132,6 +146,10 @@ export function ListingForm({
         <label className="flex items-center gap-2">
           <input type="checkbox" name="featured" defaultChecked={listing?.featured} />
           Featured
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="founding" defaultChecked={listing?.founding} />
+          Founding
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" name="verified" defaultChecked={listing?.verified} />

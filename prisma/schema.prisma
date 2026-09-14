@@ -10,43 +10,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Metro hub (FTF Destination). US national, metros first.
+/// Metro hub (FTF Destination). US national, Wave 1 metros first.
 model City {
-  id          String       @id @default(cuid())
-  slug        String       @unique
+  id          String        @id @default(cuid())
+  slug        String        @unique
   name        String
   state       String
   region      String
   description String
   heroImage   String?
+  sortOrder   Int           @default(0)
   listings    ListingCity[]
 }
 
 model Listing {
-  id           String        @id @default(cuid())
-  slug         String        @unique
-  type         String        @default("contractor")
-  name         String
-  tagline      String?
-  bio          String
-  contactEmail String
-  website      String?
-  phone        String?
-  homeCity     String?
-  homeState    String?
-  licenseId    String?
-  photos       Json
-  services     Json
-  featured     Boolean       @default(false)
-  verified     Boolean       @default(false)
-  status       String        @default("draft")
-  sourceUrl    String?
-  claimable    Boolean       @default(true)
-  claimedAt    DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  cities       ListingCity[]
-  claims       ClaimRequest[]
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  type           String         @default("contractor")
+  name           String
+  tagline        String?
+  bio            String
+  contactEmail   String
+  website        String?
+  phone          String?
+  homeCity       String?
+  homeState      String?
+  licenseId      String?
+  photos         Json
+  /// foundation | encapsulation | both
+  primaryService String         @default("foundation")
+  /// Additional badges: waterproofing, pier_beam, slab
+  services       Json
+  featured       Boolean        @default(false)
+  founding       Boolean        @default(false)
+  verified       Boolean        @default(false)
+  status         String         @default("draft")
+  sourceUrl      String?
+  claimable      Boolean        @default(true)
+  claimedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  cities         ListingCity[]
+  claims         ClaimRequest[]
 }
 
 model ListingCity {
@@ -65,19 +70,22 @@ model ClaimRequest {
   name      String
   email     String
   message   String
+  founding  Boolean  @default(false)
   status    String   @default("pending")
   createdAt DateTime @default(now())
 }
 
 model Submission {
-  id        String   @id @default(cuid())
-  type      String
-  name      String
-  email     String
-  website   String?
-  cities    String
-  services  String
-  bio       String
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  type           String
+  name           String
+  email          String
+  website        String?
+  cities         String
+  primaryService String   @default("foundation")
+  services       String
+  bio            String
+  founding       Boolean  @default(false)
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
 }

@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { listingPath, serviceLabel, typeLabel } from "@/lib/config";
-import { listingCover, listingServices, type ListingWithCities } from "@/lib/listings";
+import { additionalServiceLabel, listingPath, primaryServiceLabel, typeLabel } from "@/lib/config";
+import { listingBadges, listingCover, type ListingWithCities } from "@/lib/listings";
 
 export function ListingCard({ listing }: { listing: ListingWithCities }) {
   const cover = listingCover(listing);
   const cities = listing.cities.map((item) => item.city.name).join(" · ");
-  const services = listingServices(listing).slice(0, 4);
+  const badges = listingBadges(listing).slice(0, 3);
 
   return (
     <Link
@@ -28,9 +28,9 @@ export function ListingCard({ listing }: { listing: ListingWithCities }) {
           <span className="rounded-full bg-page/95 px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-slate">
             {typeLabel(listing.type)}
           </span>
-          {listing.featured ? (
+          {listing.founding || listing.featured ? (
             <span className="rounded-full bg-amber px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-deep">
-              Featured
+              {listing.founding ? "Founding" : "Featured"}
             </span>
           ) : null}
         </div>
@@ -45,16 +45,19 @@ export function ListingCard({ listing }: { listing: ListingWithCities }) {
         <p className="mt-1 text-sm text-muted">
           {cities || [listing.homeCity, listing.homeState].filter(Boolean).join(", ")}
         </p>
+        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-amber-deep">
+          {primaryServiceLabel(listing.primaryService)}
+        </p>
         {listing.tagline ? (
-          <p className="mt-3 text-sm leading-6 text-slate-soft">{listing.tagline}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-soft">{listing.tagline}</p>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {services.map((item) => (
+          {badges.map((item) => (
             <span
               key={item}
               className="rounded-full bg-concrete-light px-2.5 py-1 text-xs text-slate-soft"
             >
-              {serviceLabel(item)}
+              {additionalServiceLabel(item)}
             </span>
           ))}
         </div>

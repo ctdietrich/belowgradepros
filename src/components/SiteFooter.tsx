@@ -34,6 +34,9 @@ export function SiteFooter() {
           <p className="text-xs uppercase tracking-[0.2em] text-amber">Operators</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
+              <Link href="/founding">Founding listing</Link>
+            </li>
+            <li>
               <Link href="/submit">Submit a listing</Link>
             </li>
             <li>

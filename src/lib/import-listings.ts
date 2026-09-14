@@ -4,7 +4,14 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { normalizeServiceKey, type ServiceKey } from "./config";
+import {
+  normalizeAdditionalService,
+  normalizePrimaryService,
+  normalizeServiceKey,
+  type AdditionalServiceKey,
+  type PrimaryServiceKey,
+  type ServiceKey,
+} from "./config";
 import { normalizeListingStatus } from "./listing-status";
 
 export type ListingType = "contractor";
@@ -23,8 +30,10 @@ export type MappedListing = {
   homeState: string | null;
   licenseId: string | null;
   photos: string[];
-  services: ServiceKey[];
+  primaryService: PrimaryServiceKey;
+  services: AdditionalServiceKey[];
   featured: boolean;
+  founding: boolean;
   verified: boolean;
   status: "published" | "draft";
   sourceUrl: string | null;
@@ -67,6 +76,8 @@ const SOURCE_KEYS = ["source_url", "sourceurl", "source", "sourced_from", "attri
 const STATUS_KEYS = ["status", "publish_status", "listing_status"];
 const NOTES_KEYS = ["notes", "note", "internal_notes", "ops_notes"];
 const CLAIMABLE_KEYS = ["claimable", "claim", "can_claim"];
+const PRIMARY_KEYS = ["primary", "primary_service", "focus", "desk"];
+const FOUNDING_KEYS = ["founding", "founding_listing", "paid"];
 const FEATURED_KEYS = ["featured", "feature", "hero"];
 const VERIFIED_KEYS = ["verified", "verify"];
 const SLUG_KEYS = ["slug", "permalink", "handle"];
@@ -85,26 +96,25 @@ export const CITY_ALIASES: Record<string, string> = {
   dfw: "dallas-fort-worth",
   "fort worth": "dallas-fort-worth",
   "dallas tx": "dallas-fort-worth",
+  atlanta: "atlanta",
+  "atlanta ga": "atlanta",
+  "metro atlanta": "atlanta",
+  tampa: "tampa",
+  "tampa fl": "tampa",
+  "tampa bay": "tampa",
+  "st petersburg": "tampa",
+  "saint petersburg": "tampa",
+  chicago: "chicago",
+  "chicago il": "chicago",
+  "chicagoland": "chicago",
+  charlotte: "charlotte",
+  "charlotte nc": "charlotte",
+  clt: "charlotte",
   austin: "austin",
   "austin tx": "austin",
-  "san antonio": "san-antonio",
-  satx: "san-antonio",
-  "san antonio tx": "san-antonio",
-  "tampa bay": "tampa-bay",
-  tampa: "tampa-bay",
-  "st petersburg": "tampa-bay",
-  "saint petersburg": "tampa-bay",
-  "clearwater": "tampa-bay",
-  orlando: "orlando",
-  "orlando fl": "orlando",
-  jacksonville: "jacksonville",
-  jax: "jacksonville",
-  "jacksonville fl": "jacksonville",
-  "miami fort lauderdale": "miami-fort-lauderdale",
-  miami: "miami-fort-lauderdale",
-  "fort lauderdale": "miami-fort-lauderdale",
-  "south florida": "miami-fort-lauderdale",
-  broward: "miami-fort-lauderdale",
+  "st louis": "st-louis",
+  "saint louis": "st-louis",
+  "st louis mo": "st-louis",
 };
 
 export const MAX_IMPORT_CSV_BYTES = 2 * 1024 * 1024;
@@ -265,18 +275,43 @@ export function inferListingType(raw: string): ListingType {
   return "contractor";
 }
 
-export function parseServices(value: string): { services: ServiceKey[]; unknown: string[] } {
+export function parseServices(value: string): {
+  primaryHints: PrimaryServiceKey[];
+  services: AdditionalServiceKey[];
+  unknown: string[];
+} {
   const unknown: string[] = [];
-  const services: ServiceKey[] = [];
+  const primaryHints: PrimaryServiceKey[] = [];
+  const services: AdditionalServiceKey[] = [];
   for (const item of parseList(value)) {
-    const key = normalizeServiceKey(item);
-    if (key) {
-      if (!services.includes(key)) services.push(key);
+    const primary = normalizePrimaryService(item);
+    if (primary) {
+      if (!primaryHints.includes(primary)) primaryHints.push(primary);
+      continue;
+    }
+    const badge = normalizeAdditionalService(item);
+    if (badge) {
+      if (!services.includes(badge)) services.push(badge);
+    } else if (normalizeServiceKey(item)) {
+      /* already handled */
     } else {
       unknown.push(item);
     }
   }
-  return { services, unknown };
+  return { primaryHints, services, unknown };
+}
+
+export function inferPrimaryService(
+  explicit: string,
+  hints: PrimaryServiceKey[],
+): PrimaryServiceKey {
+  const fromField = normalizePrimaryService(explicit);
+  if (fromField) return fromField;
+  const hasFoundation = hints.includes("foundation") || hints.includes("both");
+  const hasEncap = hints.includes("encapsulation") || hints.includes("both");
+  if (hints.includes("both") || (hasFoundation && hasEncap)) return "both";
+  if (hasEncap) return "encapsulation";
+  return "foundation";
 }
 
 function looksLikeEmail(value: string) {
@@ -305,7 +340,7 @@ export function splitMetros(value: string): string[] {
 
   const comma = full.split(",").map((part) => part.trim()).filter(Boolean);
   if (comma.length > 1 && comma.every((part) => part.length < 48)) {
-    const places = comma.filter((part) => !/^(tx|fl|texas|florida|us|usa)$/i.test(part));
+    const places = comma.filter((part) => !/^(tx|fl|ga|il|nc|mo|texas|florida|georgia|illinois|missouri|us|usa)$/i.test(part));
     return places.length ? places : [full];
   }
   return [full];
@@ -329,9 +364,9 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
 
   const notes = getField(row, NOTES_KEYS);
   const tagline = getField(row, TAGLINE_KEYS) || notes || null;
-  const { services, unknown } = parseServices(getField(row, SERVICE_KEYS_CSV));
+  const { primaryHints, services, unknown } = parseServices(getField(row, SERVICE_KEYS_CSV));
+  const primaryService = inferPrimaryService(getField(row, PRIMARY_KEYS), primaryHints);
   if (unknown.length) warnings.push(`Unknown services for "${name}": ${unknown.join(", ")}`);
-  if (!services.length) warnings.push(`No recognized services for "${name}"`);
 
   const photos = parseList(getField(row, PHOTOS_KEYS));
   const bio =
@@ -372,8 +407,10 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
     homeState,
     licenseId,
     photos,
+    primaryService,
     services,
     featured: parseBoolean(getField(row, FEATURED_KEYS), false),
+    founding: parseBoolean(getField(row, FOUNDING_KEYS), false),
     verified: parseBoolean(getField(row, VERIFIED_KEYS), false),
     status: normalizeListingStatus(getField(row, STATUS_KEYS), "published"),
     sourceUrl,
@@ -436,6 +473,7 @@ async function resolveCity(
       state: listing.homeState || "US",
       region: listing.region || listing.homeState || name,
       description: `${name} — added from listing import.`,
+      sortOrder: 99,
     },
     select: { id: true, slug: true, name: true },
   });
@@ -456,8 +494,10 @@ function listingFields(listing: MappedListing) {
     homeState: listing.homeState,
     licenseId: listing.licenseId,
     photos: listing.photos,
+    primaryService: listing.primaryService,
     services: listing.services,
     featured: listing.featured,
+    founding: listing.founding,
     verified: listing.verified,
     status: listing.status,
     sourceUrl: listing.sourceUrl,

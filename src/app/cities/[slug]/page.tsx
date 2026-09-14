@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CityCard } from "@/components/CityCard";
 import { JsonLd } from "@/components/JsonLd";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHero } from "@/components/PageHero";
-import { cityPath } from "@/lib/config";
+import {
+  cityPath,
+  hubServiceQueryParam,
+  normalizeHubServiceQuery,
+  primaryServiceLabel,
+  site,
+} from "@/lib/config";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -12,29 +19,43 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ service?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const { service } = await searchParams;
   const city = await getCityBySlug(slug);
   if (!city) return { title: "City hub" };
+  const filter = normalizeHubServiceQuery(service);
+  const query = hubServiceQueryParam(filter);
   return {
-    title: city.name,
+    title: filter
+      ? `${city.name} ${primaryServiceLabel(filter)} contractors`
+      : `${city.name} foundation repair & encapsulation contractors`,
     description: city.description,
-    alternates: { canonical: cityPath(city.slug) },
+    alternates: { canonical: cityPath(city.slug, query ?? undefined) },
   };
 }
 
 export default async function CityDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ service?: string }>;
 }) {
   const { slug } = await params;
+  const { service } = await searchParams;
   const city = await getCityBySlug(slug);
   if (!city) notFound();
 
-  const listings = await getPublishedListings({ citySlug: city.slug });
+  const serviceFilter = normalizeHubServiceQuery(service);
+  const listings = await getPublishedListings({
+    citySlug: city.slug,
+    service: serviceFilter ?? undefined,
+  });
   const others = (await getCities()).filter((item) => item.id !== city.id);
 
   return (
@@ -46,7 +67,32 @@ export default async function CityDetailPage({
         lede={city.description}
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="font-display text-3xl text-slate">Contractors</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={cityPath(city.slug)}
+            className={`rounded-full px-3 py-1.5 text-sm ${
+              !serviceFilter ? "bg-slate text-page" : "border border-slate/15 text-slate-soft"
+            }`}
+          >
+            All
+          </Link>
+          {site.primaryServices
+            .filter((item) => item.key !== "both")
+            .map((item) => (
+              <Link
+                key={item.query}
+                href={cityPath(city.slug, item.query)}
+                className={`rounded-full px-3 py-1.5 text-sm ${
+                  serviceFilter === item.key
+                    ? "bg-slate text-page"
+                    : "border border-slate/15 text-slate-soft"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+        </div>
+        <h2 className="mt-8 font-display text-3xl text-slate">Contractors</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {listings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />

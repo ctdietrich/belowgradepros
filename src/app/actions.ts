@@ -10,7 +10,12 @@ import {
   isValidAdminPassword,
   requireAdmin,
 } from "@/lib/admin";
-import { SERVICE_KEYS, normalizeServiceKey } from "@/lib/config";
+import {
+  normalizeAdditionalService,
+  normalizePrimaryService,
+  type AdditionalServiceKey,
+} from "@/lib/config";
+import { foundingPaymentLink } from "@/lib/stripe";
 import {
   importListingsFromCsv,
   isCsvUpload,
@@ -45,10 +50,10 @@ function parseList(value: string) {
     .filter(Boolean);
 }
 
-function parseServices(value: string) {
+function parseBadges(value: string) {
   const keys = parseList(value)
-    .map((item) => normalizeServiceKey(item) ?? item)
-    .filter(Boolean);
+    .map((item) => normalizeAdditionalService(item))
+    .filter((item): item is AdditionalServiceKey => Boolean(item));
   return [...new Set(keys)];
 }
 
@@ -61,12 +66,15 @@ export async function submitListing(
   const email = readString(formData, "email").toLowerCase();
   const website = readString(formData, "website");
   const cities = readString(formData, "cities");
+  const primaryService = normalizePrimaryService(readString(formData, "primaryService")) ?? "foundation";
   const services = formData
     .getAll("services")
     .map(String)
-    .filter((key) => SERVICE_KEYS.includes(key as (typeof SERVICE_KEYS)[number]))
+    .map((key) => normalizeAdditionalService(key))
+    .filter((key): key is AdditionalServiceKey => Boolean(key))
     .join(", ");
   const bio = readString(formData, "bio");
+  const founding = formData.get("founding") === "on";
 
   if (type !== "contractor") {
     return { ok: false, error: "This directory lists contractors only." };
@@ -85,15 +93,19 @@ export async function submitListing(
       email,
       website: website || null,
       cities,
+      primaryService,
       services: services || readString(formData, "services"),
       bio,
+      founding,
     },
   });
 
   revalidatePath("/admin");
   return {
     ok: true,
-    message: "Received. We review submissions before they appear in the directory.",
+    message: founding
+      ? "Received. We will review the listing and follow up on the founding path when Stripe is live."
+      : "Received. We review submissions before they appear in the directory.",
   };
 }
 
@@ -118,14 +130,39 @@ export async function submitClaim(
     return { ok: false, error: "That listing is not available to claim." };
   }
 
+  const founding = formData.get("founding") === "on";
+
   await prisma.claimRequest.create({
-    data: { listingId, name, email, message },
+    data: { listingId, name, email, message, founding },
   });
 
   revalidatePath("/admin");
   return {
     ok: true,
-    message: "Claim received. We will write back from the editorial desk.",
+    message: founding
+      ? "Claim received. We will write back on the profile and the founding listing path."
+      : "Claim received. We will write back from the editorial desk.",
+  };
+}
+
+export async function startFoundingCheckout(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const email = readString(formData, "email").toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "Please enter a valid email." };
+  }
+
+  const link = foundingPaymentLink();
+  if (link) {
+    redirect(link);
+  }
+
+  return {
+    ok: true,
+    message:
+      "Founding checkout is stubbed until Stripe keys or a Payment Link are set. Submit or claim a listing and we will follow up.",
   };
 }
 
@@ -165,9 +202,9 @@ function listingPayload(formData: FormData) {
   const servicesFromBoxes = formData
     .getAll("serviceKeys")
     .map(String)
-    .map((item) => normalizeServiceKey(item))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const servicesFromText = parseServices(readString(formData, "services"));
+    .map((item) => normalizeAdditionalService(item))
+    .filter((item): item is AdditionalServiceKey => Boolean(item));
+  const servicesFromText = parseBadges(readString(formData, "services"));
   const services = [...new Set([...servicesFromBoxes, ...servicesFromText])];
   const cityIds = formData.getAll("cityIds").map(String).filter(Boolean);
 
@@ -185,9 +222,11 @@ function listingPayload(formData: FormData) {
     homeState: readString(formData, "homeState") || null,
     licenseId: readString(formData, "licenseId") || null,
     photos,
+    primaryService: normalizePrimaryService(readString(formData, "primaryService")) ?? "foundation",
     services,
     sourceUrl: readString(formData, "sourceUrl") || null,
     featured: formData.get("featured") === "on",
+    founding: formData.get("founding") === "on",
     verified: formData.get("verified") === "on",
     claimable: formData.get("claimable") === "on",
     cityIds,
@@ -296,9 +335,11 @@ export async function saveListing(
     homeState: payload.homeState,
     licenseId: payload.licenseId,
     photos: payload.photos,
+    primaryService: payload.primaryService,
     services: payload.services,
     sourceUrl: payload.sourceUrl,
     featured: payload.featured,
+    founding: payload.founding,
     verified: payload.verified,
     claimable: payload.claimable,
   };

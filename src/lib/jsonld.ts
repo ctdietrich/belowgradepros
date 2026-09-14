@@ -1,11 +1,25 @@
 import type { City } from "@prisma/client";
-import { absoluteUrl, cityPath, listingPath, serviceLabel, site, typeLabel } from "./config";
-import { asStringArray, listingServices, type ListingWithCities } from "./listings";
+import {
+  absoluteUrl,
+  additionalServiceLabel,
+  cityPath,
+  listingPath,
+  primaryServiceLabel,
+  site,
+  typeLabel,
+} from "./config";
+import { listingBadges, type ListingWithCities } from "./listings";
 
 export function listingJsonLd(listing: ListingWithCities) {
   const cities = listing.cities.map((item) => item.city.name);
-  const photos = asStringArray(listing.photos);
-  const services = listingServices(listing).map(serviceLabel);
+  const photos = listing.photos;
+  const image = Array.isArray(photos)
+    ? photos.filter((item): item is string => typeof item === "string")
+    : [];
+  const services = [
+    primaryServiceLabel(listing.primaryService),
+    ...listingBadges(listing).map(additionalServiceLabel),
+  ];
 
   return {
     "@context": "https://schema.org",
@@ -14,7 +28,7 @@ export function listingJsonLd(listing: ListingWithCities) {
     description: listing.tagline ?? listing.bio,
     url: absoluteUrl(listingPath(listing.slug)),
     email: listing.contactEmail,
-    image: photos,
+    image,
     telephone: listing.phone ?? undefined,
     sameAs: listing.website ? [listing.website] : undefined,
     areaServed: cities,

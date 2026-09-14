@@ -10,6 +10,7 @@ CREATE TABLE "City" (
     "region" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "heroImage" TEXT,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "City_pkey" PRIMARY KEY ("id")
 );
@@ -29,8 +30,10 @@ CREATE TABLE "Listing" (
     "homeState" TEXT,
     "licenseId" TEXT,
     "photos" JSONB NOT NULL,
+    "primaryService" TEXT NOT NULL DEFAULT 'foundation',
     "services" JSONB NOT NULL,
     "featured" BOOLEAN NOT NULL DEFAULT false,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
     "verified" BOOLEAN NOT NULL DEFAULT false,
     "status" TEXT NOT NULL DEFAULT 'draft',
     "sourceUrl" TEXT,
@@ -57,6 +60,7 @@ CREATE TABLE "ClaimRequest" (
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "message" TEXT NOT NULL,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -71,8 +75,10 @@ CREATE TABLE "Submission" (
     "email" TEXT NOT NULL,
     "website" TEXT,
     "cities" TEXT NOT NULL,
+    "primaryService" TEXT NOT NULL DEFAULT 'foundation',
     "services" TEXT NOT NULL,
     "bio" TEXT NOT NULL,
+    "founding" BOOLEAN NOT NULL DEFAULT false,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

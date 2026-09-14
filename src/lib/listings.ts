@@ -1,5 +1,5 @@
 import type { City, Listing, Prisma } from "@prisma/client";
-import { normalizeServiceKey } from "./config";
+import { matchesPrimaryFilter, normalizeAdditionalService } from "./config";
 import { publishedListingWhere } from "./listing-status";
 import { prisma } from "./prisma";
 
@@ -31,8 +31,12 @@ export function listingCover(listing: Pick<Listing, "photos">) {
   return asStringArray(listing.photos)[0] ?? null;
 }
 
-export function listingServices(listing: Pick<Listing, "services">) {
+export function listingBadges(listing: Pick<Listing, "services">) {
   return asStringArray(listing.services);
+}
+
+export function listingServices(listing: Pick<Listing, "services">) {
+  return listingBadges(listing);
 }
 
 const published = publishedListingWhere;
@@ -65,18 +69,17 @@ export async function getPublishedListings(filters?: {
   const listings = await prisma.listing.findMany({
     where,
     include: { cities: { include: { city: true } } },
-    orderBy: [{ featured: "desc" }, { name: "asc" }],
+    orderBy: [{ founding: "desc" }, { featured: "desc" }, { name: "asc" }],
   });
 
   if (!filters?.service) return listings;
 
-  const needle = normalizeServiceKey(filters.service) ?? filters.service.toLowerCase();
-  return listings.filter((listing) =>
-    listingServices(listing).some((item) => {
-      const key = normalizeServiceKey(item) ?? item.toLowerCase();
-      return key === needle;
-    }),
-  );
+  return listings.filter((listing) => {
+    if (matchesPrimaryFilter(listing.primaryService, filters.service)) return true;
+    const badge = normalizeAdditionalService(filters.service ?? "");
+    if (!badge) return false;
+    return listingBadges(listing).some((item) => normalizeAdditionalService(item) === badge);
+  });
 }
 
 export async function getListingBySlug(slug: string, includeDraft = false) {
@@ -94,7 +97,7 @@ export async function getCities() {
         include: { listing: true },
       },
     },
-    orderBy: [{ state: "asc" }, { name: "asc" }],
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
 }
 
