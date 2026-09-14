@@ -127,6 +127,22 @@ export const CITY_ALIASES: Record<string, string> = {
   "orlando fl": "orlando",
   nashville: "nashville",
   "nashville tn": "nashville",
+  memphis: "memphis",
+  "memphis tn": "memphis",
+  birmingham: "birmingham",
+  "birmingham al": "birmingham",
+  "oklahoma city": "oklahoma-city",
+  okc: "oklahoma-city",
+  "okc ok": "oklahoma-city",
+  greenville: "greenville-sc",
+  "greenville sc": "greenville-sc",
+  "greenville south carolina": "greenville-sc",
+  raleigh: "raleigh",
+  "raleigh nc": "raleigh",
+  tulsa: "tulsa",
+  "tulsa ok": "tulsa",
+  "charleston sc": "charleston-sc",
+  "charleston south carolina": "charleston-sc",
 };
 
 export const MAX_IMPORT_CSV_BYTES = 2 * 1024 * 1024;

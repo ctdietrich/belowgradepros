@@ -11,7 +11,15 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
-import { hubPageDescription, hubPageTitle } from "@/lib/hubs";
+import {
+  buildCityIndex,
+  catalogCardChips,
+  catalogCardCta,
+  catalogCardHref,
+  hubPageDescription,
+  hubPageHeading,
+  hubPageTitle,
+} from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -55,8 +63,8 @@ export default async function CityDetailPage({
     citySlug: city.slug,
     service: serviceFilter ?? undefined,
   });
-  const others = (await getCities()).filter((item) => item.id !== city.id);
-  const heading = hubPageTitle(city.slug, serviceFilter);
+  const others = buildCityIndex(await getCities()).filter((item) => item.slug !== city.slug);
+  const heading = hubPageHeading(city.slug, serviceFilter);
 
   return (
     <main>
@@ -111,7 +119,10 @@ export default async function CityDetailPage({
               state={item.state}
               region={item.region}
               heroImage={item.heroImage}
-              count={item.listings.length}
+              count={item.count}
+              href={catalogCardHref(item.slug)}
+              cta={catalogCardCta(item.slug)}
+              chips={catalogCardChips(item.slug)}
             />
           ))}
         </div>

@@ -1,5 +1,6 @@
 import type { City, Listing, Prisma } from "@prisma/client";
 import { matchesPrimaryFilter, normalizeAdditionalService } from "./config";
+import { catalogCityFallback, getWave1Hub } from "./hubs";
 import { publishedListingWhere } from "./listing-status";
 import { prisma } from "./prisma";
 
@@ -102,7 +103,7 @@ export async function getCities() {
 }
 
 export async function getCityBySlug(slug: string) {
-  return prisma.city.findUnique({
+  const city = await prisma.city.findUnique({
     where: { slug },
     include: {
       listings: {
@@ -111,6 +112,12 @@ export async function getCityBySlug(slug: string) {
       },
     },
   });
+  const hub = getWave1Hub(slug);
+  if (city) {
+    if (!hub) return city;
+    return { ...city, name: hub.name, description: hub.description };
+  }
+  return catalogCityFallback(slug);
 }
 
 export async function getClaimableListings() {

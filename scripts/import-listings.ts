@@ -13,20 +13,29 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import {
+  CITY_ALIASES,
   importListingsFromCsv,
   mapRow,
   matchCity,
+  normalizePlace,
   parseCsv,
   summarizeImport,
   type ImportListingsOptions,
 } from "../src/lib/import-listings";
 import {
   DEPRIORITIZED_HUB_SLUGS,
+  FL_ENCAP_HUB_SLUGS,
   HOMEPAGE_SERVICE_CHIPS,
   HOMEPAGE_STRIP_SLUGS,
   WAVE1_HUB_SLUGS,
+  catalogCardChips,
+  catalogCardHref,
+  getWave1Hub,
   homepageCardChips,
   homepageCardHref,
+  hubPageDescription,
+  hubPageHeading,
+  hubPageTitle,
 } from "../src/lib/hubs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -199,6 +208,46 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if (!matchCity("jacksonville", wave1)) throw new Error("metro_slug jacksonville");
   if (!matchCity("orlando", wave1)) throw new Error("metro_slug orlando");
   if (!matchCity("nashville", wave1)) throw new Error("metro_slug nashville");
+  if (!matchCity("memphis", wave1)) throw new Error("metro_slug memphis");
+  if (!matchCity("birmingham", wave1)) throw new Error("metro_slug birmingham");
+  if (!matchCity("oklahoma-city", wave1)) throw new Error("metro_slug oklahoma-city");
+  if (!matchCity("greenville-sc", wave1)) throw new Error("metro_slug greenville-sc");
+  if (!matchCity("raleigh", wave1)) throw new Error("metro_slug raleigh");
+  if (!matchCity("tulsa", wave1)) throw new Error("metro_slug tulsa");
+  if (!matchCity("charleston-sc", wave1)) throw new Error("metro_slug charleston-sc");
+  for (const slug of FL_ENCAP_HUB_SLUGS) {
+    if (!matchCity(slug, wave1)) throw new Error(`metro_slug ${slug}`);
+  }
+  if (matchCity("miami", wave1)) throw new Error("Do not treat miami as a Wave 1 hub");
+  if (matchCity("ft myers", wave1) || matchCity("wpb", wave1) || matchCity("ft lauderdale", wave1)) {
+    throw new Error("Florida catalog hubs must use exact slugs, no aliases");
+  }
+  for (const needle of [
+    "tallahassee",
+    "pensacola",
+    "fort myers",
+    "ft myers",
+    "sarasota",
+    "west palm beach",
+    "wpb",
+    "fort lauderdale",
+    "ft lauderdale",
+    "daytona beach",
+    "miami",
+  ]) {
+    if (CITY_ALIASES[normalizePlace(needle)]) {
+      throw new Error(`Do not add an import alias for ${needle}`);
+    }
+  }
+  if (!matchCity("OKC", wave1)) throw new Error("alias OKC");
+  if (!matchCity("Charleston, SC", wave1)) throw new Error("alias Charleston, SC");
+  if (!matchCity("Greenville SC", wave1)) throw new Error("alias Greenville SC");
+  if (CITY_ALIASES[normalizePlace("charleston")]) {
+    throw new Error("Do not alias bare charleston (WV) to charleston-sc");
+  }
+  if (CITY_ALIASES[normalizePlace("Charleston, SC")] !== "charleston-sc") {
+    throw new Error("Charleston, SC must alias to charleston-sc");
+  }
   if (!matchCity("Dallas", [{ id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" }])) {
     throw new Error("alias Dallas");
   }
@@ -226,6 +275,196 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   }
   if (!hubSlugs.includes("jacksonville") || !hubSlugs.includes("orlando") || !hubSlugs.includes("nashville")) {
     throw new Error("Jacksonville, Orlando, and Nashville must exist as Wave 1 hubs");
+  }
+  for (const slug of [
+    "memphis",
+    "birmingham",
+    "oklahoma-city",
+    "greenville-sc",
+    "raleigh",
+    "tulsa",
+    "charleston-sc",
+    ...FL_ENCAP_HUB_SLUGS,
+  ] as const) {
+    if (!hubSlugs.includes(slug)) throw new Error(`${slug} must exist as a Wave 1 hub`);
+    if (stripSlugs.includes(slug)) throw new Error(`${slug} must stay off the homepage strip`);
+  }
+  if (hubSlugs.includes("charleston")) {
+    throw new Error("Charleston hub must be charleston-sc, not charleston");
+  }
+  if (FL_ENCAP_HUB_SLUGS.length !== 7) {
+    throw new Error("Expected seven Florida encapsulation catalog hubs");
+  }
+  if (FL_ENCAP_HUB_SLUGS.includes("miami" as (typeof FL_ENCAP_HUB_SLUGS)[number])) {
+    throw new Error("Fort Lauderdale is not a Miami desk");
+  }
+  for (const slug of FL_ENCAP_HUB_SLUGS) {
+    if (catalogCardHref(slug) !== `/cities/${slug}?service=encapsulation`) {
+      throw new Error(`${slug} catalog card must default to encapsulation`);
+    }
+    if (!catalogCardChips(slug).some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
+      throw new Error(`${slug} catalog card must keep a foundation chip`);
+    }
+  }
+  const wave1d = [
+    {
+      slug: "tallahassee",
+      title: "Tallahassee Crawl Space Encapsulation & Foundation",
+      h1: "Tallahassee crawl space encapsulation and foundation contractors",
+      description:
+        "Tallahassee crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "pensacola",
+      title: "Pensacola Crawl Space Encapsulation & Foundation",
+      h1: "Pensacola crawl space encapsulation and foundation contractors",
+      description:
+        "Pensacola crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "fort-myers",
+      title: "Fort Myers Crawl Space Encapsulation & Foundation",
+      h1: "Fort Myers crawl space encapsulation and foundation contractors",
+      description:
+        "Fort Myers crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "sarasota",
+      title: "Sarasota Crawl Space Encapsulation & Foundation",
+      h1: "Sarasota crawl space encapsulation and foundation contractors",
+      description:
+        "Sarasota crawl space encapsulation and foundation repair. Gulf humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "west-palm-beach",
+      title: "West Palm Beach Crawl Space Encapsulation & Foundation",
+      h1: "West Palm Beach crawl space encapsulation and foundation contractors",
+      description:
+        "West Palm Beach crawl space encapsulation and foundation repair. Humid crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "fort-lauderdale",
+      title: "Fort Lauderdale Crawl Space Encapsulation & Foundation",
+      h1: "Fort Lauderdale crawl space encapsulation and foundation contractors",
+      description:
+        "Fort Lauderdale crawl space encapsulation and foundation repair. Broward humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "daytona-beach",
+      title: "Daytona Beach Crawl Space Encapsulation & Foundation",
+      h1: "Daytona Beach crawl space encapsulation and foundation contractors",
+      description:
+        "Daytona Beach crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+  ] as const;
+  for (const hub of wave1d) {
+    if (hubPageTitle(hub.slug) !== hub.title) throw new Error(`${hub.slug} title must match SEO Wave 1d`);
+    if (hubPageHeading(hub.slug) !== hub.h1) throw new Error(`${hub.slug} H1 must match SEO Wave 1d`);
+    if (hubPageDescription(hub.slug) !== hub.description) {
+      throw new Error(`${hub.slug} meta description must match SEO Wave 1d`);
+    }
+  }
+  if (hubPageHeading("west-palm-beach").includes("WPB")) {
+    throw new Error("West Palm Beach H1 must use the full name, not WPB");
+  }
+  if (hubPageDescription("fort-lauderdale").toLowerCase().includes("miami")) {
+    throw new Error("Fort Lauderdale copy must not treat the desk as Miami");
+  }
+  if (hubPageTitle("memphis") !== "Memphis Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Memphis hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("memphis") !== "Memphis foundation repair and crawl space contractors") {
+    throw new Error("Memphis H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("memphis") !==
+    "Memphis foundation repair and crawl space encapsulation contractors. Settling, cracks, musty crawl. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Memphis meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("birmingham") !== "Birmingham Crawl Space Encapsulation & Foundation") {
+    throw new Error("Birmingham hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("birmingham") !== "Birmingham crawl space encapsulation and foundation contractors") {
+    throw new Error("Birmingham H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("birmingham") !==
+    "Birmingham crawl space encapsulation and foundation repair. Musty crawl, settling, cracks. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Birmingham meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("oklahoma-city") !== "Oklahoma City Foundation Repair Contractors") {
+    throw new Error("Oklahoma City hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("oklahoma-city") !== "Oklahoma City foundation repair contractors") {
+    throw new Error("Oklahoma City H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("oklahoma-city") !==
+    "Oklahoma City foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros."
+  ) {
+    throw new Error("Oklahoma City meta description must match SEO Wave 1c");
+  }
+  if (getWave1Hub("greenville-sc")?.name !== "Greenville, SC") {
+    throw new Error("Greenville display name must be Greenville, SC");
+  }
+  if (hubPageTitle("greenville-sc") !== "Greenville SC Crawl Space Encapsulation & Foundation") {
+    throw new Error("Greenville SC hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("greenville-sc") !== "Greenville, SC crawl space encapsulation and foundation contractors") {
+    throw new Error("Greenville SC H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("greenville-sc") !==
+    "Greenville, SC crawl space encapsulation and foundation repair. Musty crawl, settling. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Greenville SC meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("raleigh") !== "Raleigh Foundation Repair & Crawl Encapsulation") {
+    throw new Error("Raleigh hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("raleigh") !== "Raleigh foundation repair and crawl space contractors") {
+    throw new Error("Raleigh H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("raleigh") !==
+    "Raleigh foundation repair and crawl space encapsulation. Clay soils, settling, musty crawl. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Raleigh meta description must match SEO Wave 1c");
+  }
+  if (hubPageTitle("tulsa") !== "Tulsa Foundation Repair Contractors") {
+    throw new Error("Tulsa hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("tulsa") !== "Tulsa foundation repair contractors") {
+    throw new Error("Tulsa H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("tulsa") !==
+    "Tulsa foundation repair for clay soils, settling, and cracks. Compare contractors on BelowGradePros."
+  ) {
+    throw new Error("Tulsa meta description must match SEO Wave 1c");
+  }
+  if (getWave1Hub("charleston-sc")?.name !== "Charleston, SC") {
+    throw new Error("Charleston display name must be Charleston, SC");
+  }
+  if (hubPageTitle("charleston-sc") !== "Charleston SC Crawl Space Encapsulation & Foundation") {
+    throw new Error("Charleston SC hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("charleston-sc") !== "Charleston, SC crawl space encapsulation and foundation contractors") {
+    throw new Error("Charleston SC H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("charleston-sc") !==
+    "Charleston, SC crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Charleston SC meta description must match SEO Wave 1c");
+  }
+  if (catalogCardHref("charleston-sc") !== "/cities/charleston-sc?service=encapsulation") {
+    throw new Error("Charleston SC catalog card must default to encapsulation");
+  }
+  if (!catalogCardChips("charleston-sc").some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
+    throw new Error("Charleston SC catalog card must keep a foundation chip");
   }
   if (HOMEPAGE_SERVICE_CHIPS[0]?.href !== "/cities/tampa?service=encapsulation") {
     throw new Error("Encapsulation chip must target Tampa encapsulation");
