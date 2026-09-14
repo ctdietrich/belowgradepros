@@ -1,6 +1,6 @@
 import type { City, Listing, Prisma } from "@prisma/client";
 import { matchesPrimaryFilter, normalizeAdditionalService } from "./config";
-import { catalogCityFallback } from "./hubs";
+import { catalogCityFallback, getWave1Hub } from "./hubs";
 import { publishedListingWhere } from "./listing-status";
 import { prisma } from "./prisma";
 
@@ -112,7 +112,11 @@ export async function getCityBySlug(slug: string) {
       },
     },
   });
-  if (city) return city;
+  const hub = getWave1Hub(slug);
+  if (city) {
+    if (!hub) return city;
+    return { ...city, name: hub.name, description: hub.description };
+  }
   return catalogCityFallback(slug);
 }
 

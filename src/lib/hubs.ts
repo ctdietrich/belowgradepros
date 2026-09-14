@@ -195,14 +195,15 @@ export const WAVE1_HUBS = [
   },
   {
     slug: "charleston-sc",
-    name: "Charleston",
+    name: "Charleston, SC",
     state: "SC",
     region: "Lowcountry",
-    title: "Charleston Crawl Space Encapsulation & Foundation",
-    foundationTitle: "Charleston Foundation Repair Contractors",
-    encapsulationTitle: "Charleston Crawl Space Encapsulation Contractors",
+    title: "Charleston SC Crawl Space Encapsulation & Foundation",
+    h1: "Charleston, SC crawl space encapsulation and foundation contractors",
+    foundationTitle: "Charleston, SC Foundation Repair Contractors",
+    encapsulationTitle: "Charleston, SC Crawl Space Encapsulation Contractors",
     description:
-      "Charleston, SC crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Charleston, SC crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "tallahassee",
@@ -341,6 +342,11 @@ export function isFlEncapHub(slug: string): slug is FlEncapHubSlug {
   return (FL_ENCAP_HUB_SLUGS as readonly string[]).includes(slug);
 }
 
+/** Catalog cards that default to encapsulation + foundation chip (not homepage strip). */
+export function isCatalogEncapHub(slug: string) {
+  return slug === "charleston-sc" || isFlEncapHub(slug);
+}
+
 /** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
 export const HOMEPAGE_SERVICE_CHIPS = [
   { label: "Encapsulation", href: "/cities/tampa?service=encapsulation" },
@@ -414,17 +420,17 @@ export function homepageCardChips(slug: string): { label: string; href: string }
 
 /** `/cities` index cards — FL encap hubs default to encapsulation and keep a foundation chip. */
 export function catalogCardHref(slug: string) {
-  if (isFlEncapHub(slug)) return `/cities/${slug}?service=encapsulation`;
+  if (isCatalogEncapHub(slug)) return `/cities/${slug}?service=encapsulation`;
   return `/cities/${slug}`;
 }
 
 export function catalogCardCta(slug: string) {
-  if (isFlEncapHub(slug)) return "Encapsulation";
+  if (isCatalogEncapHub(slug)) return "Encapsulation";
   return null;
 }
 
 export function catalogCardChips(slug: string): { label: string; href: string }[] {
-  if (!isFlEncapHub(slug)) return [];
+  if (!isCatalogEncapHub(slug)) return [];
   return [{ label: "Foundation", href: `/cities/${slug}?service=foundation-repair` }];
 }
 
@@ -467,7 +473,7 @@ export function buildCityIndex(cities: CityIndexRow[]) {
     return {
       id: city?.id ?? `catalog:${hub.slug}`,
       slug: hub.slug,
-      name: city?.name ?? hub.name,
+      name: hub.name,
       state: city?.state ?? hub.state,
       region: city?.region ?? hub.region,
       heroImage: city?.heroImage ?? null,

@@ -384,8 +384,26 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   ) {
     throw new Error("Tulsa meta description must match SEO Wave 1c");
   }
-  if (hubPageTitle("charleston-sc") !== "Charleston Crawl Space Encapsulation & Foundation") {
-    throw new Error("Charleston SC hub title should stay specialty-directory interim");
+  if (getWave1Hub("charleston-sc")?.name !== "Charleston, SC") {
+    throw new Error("Charleston display name must be Charleston, SC");
+  }
+  if (hubPageTitle("charleston-sc") !== "Charleston SC Crawl Space Encapsulation & Foundation") {
+    throw new Error("Charleston SC hub title must match SEO Wave 1c");
+  }
+  if (hubPageHeading("charleston-sc") !== "Charleston, SC crawl space encapsulation and foundation contractors") {
+    throw new Error("Charleston SC H1 must match SEO Wave 1c");
+  }
+  if (
+    hubPageDescription("charleston-sc") !==
+    "Charleston, SC crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros."
+  ) {
+    throw new Error("Charleston SC meta description must match SEO Wave 1c");
+  }
+  if (catalogCardHref("charleston-sc") !== "/cities/charleston-sc?service=encapsulation") {
+    throw new Error("Charleston SC catalog card must default to encapsulation");
+  }
+  if (!catalogCardChips("charleston-sc").some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
+    throw new Error("Charleston SC catalog card must keep a foundation chip");
   }
   if (HOMEPAGE_SERVICE_CHIPS[0]?.href !== "/cities/tampa?service=encapsulation") {
     throw new Error("Encapsulation chip must target Tampa encapsulation");
