@@ -257,7 +257,7 @@ export function parseList(value: string) {
     .filter(Boolean);
 }
 
-export function inferListingType(raw: string, _name: string): ListingType {
+export function inferListingType(raw: string): ListingType {
   const value = raw.trim().toLowerCase();
   if (value && value !== "contractor") {
     /* single-type directory; ignore unknown type labels */
@@ -316,7 +316,7 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   const name = getField(row, NAME_KEYS);
   if (!name) return { error: `Row ${index + 2}: missing name` };
 
-  const type = inferListingType(getField(row, TYPE_KEYS), name);
+  const type = inferListingType(getField(row, TYPE_KEYS));
   const csvSlug = getField(row, SLUG_KEYS);
   const slug = slugify(csvSlug || name);
   if (!slug) return { error: `Row ${index + 2}: could not build a slug for "${name}"` };
