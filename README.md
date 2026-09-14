@@ -64,7 +64,7 @@ Seed data uses **@example.com** addresses only and includes 20 published contrac
 | --- | --- |
 | `DATABASE_URL` | **Required.** Postgres connection string |
 | `ADMIN_PASSWORD` | **Required** in production. Shared password for `/admin` |
-| `NEXT_PUBLIC_SITE_URL` | Optional. Canonical site URL for metadata, sitemap, and JSON-LD |
+| `NEXT_PUBLIC_SITE_URL` | **Required for production SEO.** Canonical origin for metadataBase, canonical/OG URLs, `robots.txt` Sitemap, and sitemap `<loc>`s. Set to `https://belowgradepros.com` on Vercel Production. |
 | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Founding Payment Link. Preview builds work when empty. |
 | `STRIPE_PAYMENT_LINK` | Optional. Server-side alias for the same Payment Link |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional. Placeholder for a future Checkout session |
@@ -81,12 +81,23 @@ Set these project environment variables (Production, and Preview if you want tho
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Postgres URL from Vercel Postgres, Neon, Supabase, or any host. Use a pooled URL for the app if the provider offers one. |
 | `ADMIN_PASSWORD` | Yes | Shared `/admin` password |
-| `NEXT_PUBLIC_SITE_URL` | No | e.g. `https://belowgradepros.com`. If unset, the app falls back to `VERCEL_URL` or `https://belowgradepros.com` |
+| `NEXT_PUBLIC_SITE_URL` | **Yes (Production SEO)** | `https://belowgradepros.com`. Set this on the Vercel **Production** environment (and Preview if you want previews to share the same canonical). Do **not** point it at a `*.vercel.app` deployment URL. If unset on Production, the app still uses `https://belowgradepros.com` and **never** `VERCEL_URL`. Preview deploys may fall back to `VERCEL_URL` only when this var is unset. |
 | Stripe Payment Link / keys | No | Founding CTA stays stubbed until a link is set |
 
 Build already runs `prisma generate && next build`. Database pages are `force-dynamic`, so Next does not prerender them at build time. `DATABASE_URL` must still be present so Prisma can generate the client; a missing or invalid database fails at **runtime**, not during compile.
 
 This repo does **not** create the Vercel project or DNS. Document env only.
+
+After production deploy, confirm SEO URLs are the custom domain (not a Vercel deployment host):
+
+```bash
+curl -sS https://belowgradepros.com/robots.txt
+# Sitemap: https://belowgradepros.com/sitemap.xml
+
+curl -sS https://belowgradepros.com/sitemap.xml | head
+# every <loc> should start with https://belowgradepros.com/
+# city hubs should be /cities/{slug} only — no ?service= query strings
+```
 
 Do **not** run migrations during the Vercel build. After the first deploy (and after later schema changes), apply migrations against production:
 
@@ -123,6 +134,7 @@ npm run db:deploy         # prisma migrate deploy (production)
 npm run seed              # reset sample cities and listings (destructive)
 npm run import:listings   # upsert listings from a CSV (see docs/import-listings.md)
 npm run lint
+npm run test:seo          # canonical URL + sitemap hub path checks
 ```
 
 ## Product boundaries

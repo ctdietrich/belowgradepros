@@ -8,6 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:seo": "tsx --test src/lib/config.test.ts",
     "seed": "prisma db seed",
     "import:listings": "tsx scripts/import-listings.ts",
     "db:deploy": "prisma migrate deploy",

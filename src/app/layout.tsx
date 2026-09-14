@@ -7,11 +7,10 @@ import { resolveSiteUrl, site } from "@/lib/config";
 import "./globals.css";
 
 function metadataBaseUrl(): URL {
-  const fallback = "https://belowgradepros.com";
   try {
     return new URL(resolveSiteUrl());
   } catch {
-    return new URL(fallback);
+    return new URL("https://belowgradepros.com");
   }
 }
 
@@ -25,25 +24,28 @@ const display = Source_Serif_4({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: metadataBaseUrl(),
-  title: {
-    default: `${site.name} — ${site.tagline}`,
-    template: `%s · ${site.name}`,
-  },
-  description: site.description,
-  openGraph: {
-    title: site.name,
+export async function generateMetadata(): Promise<Metadata> {
+  const url = resolveSiteUrl();
+  return {
+    metadataBase: metadataBaseUrl(),
+    title: {
+      default: `${site.name} — ${site.tagline}`,
+      template: `%s · ${site.name}`,
+    },
     description: site.description,
-    url: site.url,
-    siteName: site.name,
-    locale: "en_US",
-    type: "website",
-  },
-  alternates: {
-    canonical: "/",
-  },
-};
+    openGraph: {
+      title: site.name,
+      description: site.description,
+      url,
+      siteName: site.name,
+      locale: "en_US",
+      type: "website",
+    },
+    alternates: {
+      canonical: "/",
+    },
+  };
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
