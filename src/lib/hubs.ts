@@ -5,88 +5,88 @@ export const WAVE1_HUBS = [
     name: "Houston",
     state: "TX",
     region: "Gulf Coast",
-    title: "Houston Foundation Repair & Encapsulation Contractors",
+    title: "Houston Foundation Repair & Crawl Encapsulation",
     foundationTitle: "Houston Foundation Repair Contractors",
-    encapsulationTitle: "Houston Encapsulation Contractors",
+    encapsulationTitle: "Houston Crawl Space Encapsulation Contractors",
     description:
-      "Houston foundation repair and crawl-space encapsulation contractors. Clay soils, pier-and-beam bungalows, and slab suburbs from the Energy Corridor to the Bay.",
+      "Find foundation repair and crawl space encapsulation contractors in Houston. Settling, cracks, pier & beam, musty crawl. Inquire on BelowGradePros.",
   },
   {
     slug: "dallas-fort-worth",
     name: "Dallas–Fort Worth",
     state: "TX",
     region: "North Texas",
-    title: "Dallas–Fort Worth Foundation Repair & Encapsulation Contractors",
+    title: "Dallas–Fort Worth Foundation Repair Contractors",
     foundationTitle: "Dallas–Fort Worth Foundation Repair Contractors",
-    encapsulationTitle: "Dallas–Fort Worth Encapsulation Contractors",
+    encapsulationTitle: "Dallas–Fort Worth Crawl Space Encapsulation Contractors",
     description:
-      "Dallas–Fort Worth foundation repair and encapsulation contractors. Expansive North Texas clay, post-tension slabs, and older pier-and-beam neighborhoods.",
+      "Compare DFW foundation repair contractors — Dallas, Fort Worth, Plano. Clay soils, pier & beam, settling cracks. Inquire on BelowGradePros.",
   },
   {
     slug: "atlanta",
     name: "Atlanta",
     state: "GA",
     region: "Southeast",
-    title: "Atlanta Foundation Repair & Encapsulation Contractors",
+    title: "Atlanta Foundation Repair & Crawl Encapsulation",
     foundationTitle: "Atlanta Foundation Repair Contractors",
-    encapsulationTitle: "Atlanta Encapsulation Contractors",
+    encapsulationTitle: "Atlanta Crawl Space Encapsulation Contractors",
     description:
-      "Atlanta foundation repair and encapsulation contractors. Piedmont clay, crawl-space ranch houses, and a growing slab ring around the perimeter.",
+      "Atlanta foundation repair and crawl space encapsulation contractors. Clay soils, settling, musty crawl spaces. Inquire on BelowGradePros.",
   },
   {
     slug: "tampa",
     name: "Tampa",
     state: "FL",
     region: "Gulf Coast",
-    title: "Tampa Foundation Repair & Encapsulation Contractors",
+    title: "Tampa Foundation Repair & Crawl Encapsulation",
     foundationTitle: "Tampa Foundation Repair Contractors",
-    encapsulationTitle: "Tampa Encapsulation Contractors",
+    encapsulationTitle: "Tampa Crawl Space Encapsulation Contractors",
     description:
-      "Tampa foundation repair and encapsulation contractors. High water tables, block homes, and crawl spaces that want moisture control as much as structural repair.",
+      "Tampa foundation repair and crawl space encapsulation contractors. Cracks, settling, sinkhole adjacency. Inquire on BelowGradePros.",
   },
   {
     slug: "chicago",
     name: "Chicago",
     state: "IL",
     region: "Midwest",
-    title: "Chicago Foundation Repair & Encapsulation Contractors",
+    title: "Chicago Foundation Repair Contractors",
     foundationTitle: "Chicago Foundation Repair Contractors",
-    encapsulationTitle: "Chicago Encapsulation Contractors",
+    encapsulationTitle: "Chicago Crawl Space Encapsulation Contractors",
     description:
-      "Chicago foundation repair and encapsulation contractors. Basement moisture, older masonry, and clay that moves through freeze-thaw.",
+      "Find Chicago foundation repair contractors for cracks, settling, and bowed basement walls. Compare specialists on BelowGradePros.",
   },
   {
     slug: "charlotte",
     name: "Charlotte",
     state: "NC",
     region: "Carolinas",
-    title: "Charlotte Foundation Repair & Encapsulation Contractors",
+    title: "Charlotte Crawl Space Encapsulation & Foundation",
     foundationTitle: "Charlotte Foundation Repair Contractors",
-    encapsulationTitle: "Charlotte Encapsulation Contractors",
+    encapsulationTitle: "Charlotte Crawl Space Encapsulation Contractors",
     description:
-      "Charlotte foundation repair and encapsulation contractors. Piedmont clay, crawl-space stock, and a fast suburban slab ring.",
+      "Charlotte crawl space encapsulation and foundation repair contractors. Musty crawl, settling, pier & beam. Inquire on BelowGradePros.",
   },
   {
     slug: "austin",
     name: "Austin",
     state: "TX",
     region: "Central Texas",
-    title: "Austin Foundation Repair & Encapsulation Contractors",
+    title: "Austin Foundation Repair Contractors",
     foundationTitle: "Austin Foundation Repair Contractors",
-    encapsulationTitle: "Austin Encapsulation Contractors",
+    encapsulationTitle: "Austin Crawl Space Encapsulation Contractors",
     description:
-      "Austin foundation repair and encapsulation contractors. Hill Country limestone, Edwards clay, and a split between east-side pier-and-beam and west-side slabs.",
+      "Austin foundation repair contractors for clay soils, pier & beam, and settling cracks. Compare specialists on BelowGradePros.",
   },
   {
     slug: "st-louis",
     name: "St. Louis",
     state: "MO",
     region: "Midwest",
-    title: "St. Louis Foundation Repair & Encapsulation Contractors",
+    title: "St. Louis Foundation Repair Contractors",
     foundationTitle: "St. Louis Foundation Repair Contractors",
-    encapsulationTitle: "St. Louis Encapsulation Contractors",
+    encapsulationTitle: "St. Louis Crawl Space Encapsulation Contractors",
     description:
-      "St. Louis foundation repair and encapsulation contractors. Brick basements, limestone, and humidity that keeps encapsulation on the calendar.",
+      "St. Louis foundation repair for cracks, settling, and bowed walls. Compare Midwest foundation specialists on BelowGradePros.",
   },
 ] as const;
 
@@ -105,6 +105,10 @@ export function getWave1Hub(slug: string) {
   return WAVE1_HUBS.find((hub) => hub.slug === slug) ?? null;
 }
 
+export function hubPageDescription(slug: string, fallback?: string | null) {
+  return getWave1Hub(slug)?.description ?? fallback ?? "";
+}
+
 /** Specialty-directory title for a hub, including `?service=foundation-repair|encapsulation`. */
 export function hubPageTitle(slug: string, service?: "foundation" | "encapsulation" | null) {
   const hub = getWave1Hub(slug);
@@ -118,6 +122,6 @@ export function hubPageTitle(slug: string, service?: "foundation" | "encapsulati
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
   if (service === "foundation") return `${fallback} Foundation Repair Contractors`;
-  if (service === "encapsulation") return `${fallback} Encapsulation Contractors`;
-  return `${fallback} Foundation Repair & Encapsulation Contractors`;
+  if (service === "encapsulation") return `${fallback} Crawl Space Encapsulation Contractors`;
+  return `${fallback} Foundation Repair & Crawl Encapsulation`;
 }

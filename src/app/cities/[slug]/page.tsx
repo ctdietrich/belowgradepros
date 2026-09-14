@@ -11,7 +11,7 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
-import { hubPageTitle } from "@/lib/hubs";
+import { hubPageDescription, hubPageTitle } from "@/lib/hubs";
 import { cityJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
@@ -33,7 +33,7 @@ export async function generateMetadata({
   const title = hubPageTitle(city.slug, filter);
   return {
     title,
-    description: city.description,
+    description: hubPageDescription(city.slug, city.description),
     alternates: { canonical: cityPath(city.slug, query ?? undefined) },
   };
 }
@@ -60,11 +60,11 @@ export default async function CityDetailPage({
 
   return (
     <main>
-      <JsonLd data={cityJsonLd(city)} />
+      <JsonLd data={cityJsonLd({ ...city, description: hubPageDescription(city.slug, city.description) })} />
       <PageHero
         kicker={`${city.region} · ${city.state}`}
         title={heading}
-        lede={city.description}
+        lede={hubPageDescription(city.slug, city.description)}
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
         <div className="flex flex-wrap items-center gap-2">
