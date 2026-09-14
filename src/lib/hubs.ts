@@ -211,10 +211,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Big Bend",
     title: "Tallahassee Crawl Space Encapsulation & Foundation",
+    h1: "Tallahassee crawl space encapsulation and foundation contractors",
     foundationTitle: "Tallahassee Foundation Repair Contractors",
     encapsulationTitle: "Tallahassee Crawl Space Encapsulation Contractors",
     description:
-      "Tallahassee crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Tallahassee crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
   },
   {
     slug: "pensacola",
@@ -222,10 +223,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Panhandle",
     title: "Pensacola Crawl Space Encapsulation & Foundation",
+    h1: "Pensacola crawl space encapsulation and foundation contractors",
     foundationTitle: "Pensacola Foundation Repair Contractors",
     encapsulationTitle: "Pensacola Crawl Space Encapsulation Contractors",
     description:
-      "Pensacola crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Pensacola crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "fort-myers",
@@ -233,10 +235,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Southwest Florida",
     title: "Fort Myers Crawl Space Encapsulation & Foundation",
+    h1: "Fort Myers crawl space encapsulation and foundation contractors",
     foundationTitle: "Fort Myers Foundation Repair Contractors",
     encapsulationTitle: "Fort Myers Crawl Space Encapsulation Contractors",
     description:
-      "Fort Myers crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Fort Myers crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
   },
   {
     slug: "sarasota",
@@ -244,10 +247,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Gulf Coast",
     title: "Sarasota Crawl Space Encapsulation & Foundation",
+    h1: "Sarasota crawl space encapsulation and foundation contractors",
     foundationTitle: "Sarasota Foundation Repair Contractors",
     encapsulationTitle: "Sarasota Crawl Space Encapsulation Contractors",
     description:
-      "Sarasota crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Sarasota crawl space encapsulation and foundation repair. Gulf humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "west-palm-beach",
@@ -255,10 +259,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Palm Beaches",
     title: "West Palm Beach Crawl Space Encapsulation & Foundation",
+    h1: "West Palm Beach crawl space encapsulation and foundation contractors",
     foundationTitle: "West Palm Beach Foundation Repair Contractors",
     encapsulationTitle: "West Palm Beach Crawl Space Encapsulation Contractors",
     description:
-      "West Palm Beach crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "West Palm Beach crawl space encapsulation and foundation repair. Humid crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "fort-lauderdale",
@@ -266,10 +271,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Broward",
     title: "Fort Lauderdale Crawl Space Encapsulation & Foundation",
+    h1: "Fort Lauderdale crawl space encapsulation and foundation contractors",
     foundationTitle: "Fort Lauderdale Foundation Repair Contractors",
     encapsulationTitle: "Fort Lauderdale Crawl Space Encapsulation Contractors",
     description:
-      "Fort Lauderdale crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Broward desk — not Miami. Inquire on BelowGradePros.",
+      "Fort Lauderdale crawl space encapsulation and foundation repair. Broward humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
   {
     slug: "daytona-beach",
@@ -277,10 +283,11 @@ export const WAVE1_HUBS = [
     state: "FL",
     region: "Volusia",
     title: "Daytona Beach Crawl Space Encapsulation & Foundation",
+    h1: "Daytona Beach crawl space encapsulation and foundation contractors",
     foundationTitle: "Daytona Beach Foundation Repair Contractors",
     encapsulationTitle: "Daytona Beach Crawl Space Encapsulation Contractors",
     description:
-      "Daytona Beach crawl space encapsulation and foundation repair contractors. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+      "Daytona Beach crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
   },
 ] as const;
 

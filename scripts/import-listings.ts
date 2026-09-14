@@ -305,9 +305,70 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
     if (!catalogCardChips(slug).some((chip) => chip.href.endsWith("?service=foundation-repair"))) {
       throw new Error(`${slug} catalog card must keep a foundation chip`);
     }
-    if (!hubPageTitle(slug).includes("Crawl Space Encapsulation")) {
-      throw new Error(`${slug} interim title should be encapsulation-heavy`);
+  }
+  const wave1d = [
+    {
+      slug: "tallahassee",
+      title: "Tallahassee Crawl Space Encapsulation & Foundation",
+      h1: "Tallahassee crawl space encapsulation and foundation contractors",
+      description:
+        "Tallahassee crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "pensacola",
+      title: "Pensacola Crawl Space Encapsulation & Foundation",
+      h1: "Pensacola crawl space encapsulation and foundation contractors",
+      description:
+        "Pensacola crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "fort-myers",
+      title: "Fort Myers Crawl Space Encapsulation & Foundation",
+      h1: "Fort Myers crawl space encapsulation and foundation contractors",
+      description:
+        "Fort Myers crawl space encapsulation and foundation repair. Humid crawl, settling, cracks. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "sarasota",
+      title: "Sarasota Crawl Space Encapsulation & Foundation",
+      h1: "Sarasota crawl space encapsulation and foundation contractors",
+      description:
+        "Sarasota crawl space encapsulation and foundation repair. Gulf humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "west-palm-beach",
+      title: "West Palm Beach Crawl Space Encapsulation & Foundation",
+      h1: "West Palm Beach crawl space encapsulation and foundation contractors",
+      description:
+        "West Palm Beach crawl space encapsulation and foundation repair. Humid crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "fort-lauderdale",
+      title: "Fort Lauderdale Crawl Space Encapsulation & Foundation",
+      h1: "Fort Lauderdale crawl space encapsulation and foundation contractors",
+      description:
+        "Fort Lauderdale crawl space encapsulation and foundation repair. Broward humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+    {
+      slug: "daytona-beach",
+      title: "Daytona Beach Crawl Space Encapsulation & Foundation",
+      h1: "Daytona Beach crawl space encapsulation and foundation contractors",
+      description:
+        "Daytona Beach crawl space encapsulation and foundation repair. Coastal humidity, musty crawl, settling. Inquire on BelowGradePros.",
+    },
+  ] as const;
+  for (const hub of wave1d) {
+    if (hubPageTitle(hub.slug) !== hub.title) throw new Error(`${hub.slug} title must match SEO Wave 1d`);
+    if (hubPageHeading(hub.slug) !== hub.h1) throw new Error(`${hub.slug} H1 must match SEO Wave 1d`);
+    if (hubPageDescription(hub.slug) !== hub.description) {
+      throw new Error(`${hub.slug} meta description must match SEO Wave 1d`);
     }
+  }
+  if (hubPageHeading("west-palm-beach").includes("WPB")) {
+    throw new Error("West Palm Beach H1 must use the full name, not WPB");
+  }
+  if (hubPageDescription("fort-lauderdale").toLowerCase().includes("miami")) {
+    throw new Error("Fort Lauderdale copy must not treat the desk as Miami");
   }
   if (hubPageTitle("memphis") !== "Memphis Foundation Repair & Crawl Encapsulation") {
     throw new Error("Memphis hub title must match SEO Wave 1c");

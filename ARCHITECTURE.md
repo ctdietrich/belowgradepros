@@ -66,13 +66,13 @@ Locked taxonomy for v1. Hub copy/titles live in `src/lib/hubs.ts` (`directories/
 | `/cities/raleigh` | Wave 1 hub (kept; not in primary homepage strip); both |
 | `/cities/tulsa` | Wave 1 hub (kept; not in primary homepage strip); foundation-lean |
 | `/cities/charleston-sc` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean; display name `Charleston, SC`; catalog card defaults to encapsulation (`charleston-sc`, not `charleston`) |
-| `/cities/tallahassee` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy; catalog card defaults to encapsulation |
-| `/cities/pensacola` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |
-| `/cities/fort-myers` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |
-| `/cities/sarasota` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |
-| `/cities/west-palm-beach` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |
-| `/cities/fort-lauderdale` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal; Broward desk, **not** Miami |
-| `/cities/daytona-beach` | Wave 1 stub (kept; not in primary homepage strip); encapsulation-heavy coastal |
+| `/cities/tallahassee` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean; catalog card defaults to encapsulation |
+| `/cities/pensacola` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal |
+| `/cities/fort-myers` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal |
+| `/cities/sarasota` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal |
+| `/cities/west-palm-beach` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal; H1 uses full name, not WPB |
+| `/cities/fort-lauderdale` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal; Broward desk, **not** Miami |
+| `/cities/daytona-beach` | Wave 1 hub (kept; not in primary homepage strip); encapsulation-lean coastal |
 | `/cities/{slug}?service=foundation-repair` | Hub filtered to foundation repair (+ `both`) |
 | `/cities/{slug}?service=encapsulation` | Hub filtered to encapsulation (+ `both`) |
 | `/l/{slug}` | Listing detail + JSON-LD |
