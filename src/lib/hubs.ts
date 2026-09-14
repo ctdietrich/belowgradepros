@@ -1,4 +1,4 @@
-/** Wave 1 city hubs — SEO lock. Publish / seed order: Houston → DFW → Atlanta → Tampa → Chicago, then Charlotte, Austin, St. Louis. */
+/** Wave 1 city hubs — SEO lock. Catalog includes deprioritized metros; homepage order is `HOMEPAGE_STRIP`. */
 export const WAVE1_HUBS = [
   {
     slug: "houston",
@@ -88,6 +88,39 @@ export const WAVE1_HUBS = [
     description:
       "St. Louis foundation repair for cracks, settling, and bowed walls. Compare Midwest foundation specialists on BelowGradePros.",
   },
+  {
+    slug: "jacksonville",
+    name: "Jacksonville",
+    state: "FL",
+    region: "First Coast",
+    title: "Jacksonville Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Jacksonville Foundation Repair Contractors",
+    encapsulationTitle: "Jacksonville Crawl Space Encapsulation Contractors",
+    description:
+      "Jacksonville crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "orlando",
+    name: "Orlando",
+    state: "FL",
+    region: "Central Florida",
+    title: "Orlando Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Orlando Foundation Repair Contractors",
+    encapsulationTitle: "Orlando Crawl Space Encapsulation Contractors",
+    description:
+      "Orlando crawl space encapsulation and foundation repair contractors. Humidity, musty crawl, settling. Inquire on BelowGradePros.",
+  },
+  {
+    slug: "nashville",
+    name: "Nashville",
+    state: "TN",
+    region: "Middle Tennessee",
+    title: "Nashville Crawl Space Encapsulation & Foundation",
+    foundationTitle: "Nashville Foundation Repair Contractors",
+    encapsulationTitle: "Nashville Crawl Space Encapsulation Contractors",
+    description:
+      "Nashville crawl space encapsulation and foundation repair contractors. Musty crawl, humidity, settling. Inquire on BelowGradePros.",
+  },
 ] as const;
 
 export type Wave1HubSlug = (typeof WAVE1_HUBS)[number]["slug"];
@@ -101,8 +134,43 @@ export const WAVE1_CITIES = WAVE1_HUBS.map(({ slug, name, state, region }) => ({
 
 export const WAVE1_HUB_SLUGS = WAVE1_HUBS.map((hub) => hub.slug);
 
+/** Hubs that stay at `/cities/{slug}` but are not in the primary homepage strip. */
+export const DEPRIORITIZED_HUB_SLUGS = ["chicago", "austin", "st-louis"] as const;
+
+/**
+ * Primary homepage strip — explicit 8-card order (not DB `sortOrder`).
+ * Moisture hubs default to `?service=encapsulation`. DFW is foundation-first.
+ * Do not auto-add Miami.
+ */
+export const HOMEPAGE_STRIP = [
+  { slug: "tampa", emphasis: "moisture", foundationChip: true },
+  { slug: "houston", emphasis: "moisture", foundationChip: true },
+  { slug: "atlanta", emphasis: "moisture", foundationChip: true },
+  { slug: "charlotte", emphasis: "moisture", foundationChip: true },
+  { slug: "jacksonville", emphasis: "moisture", foundationChip: true },
+  { slug: "orlando", emphasis: "moisture", foundationChip: true },
+  { slug: "nashville", emphasis: "moisture", foundationChip: true },
+  { slug: "dallas-fort-worth", emphasis: "foundation", pierBeamChip: true },
+] as const;
+
+export type HomepageStripSlug = (typeof HOMEPAGE_STRIP)[number]["slug"];
+export type HomepageStripEntry = (typeof HOMEPAGE_STRIP)[number];
+
+export const HOMEPAGE_STRIP_SLUGS = HOMEPAGE_STRIP.map((item) => item.slug);
+
+/** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
+export const HOMEPAGE_SERVICE_CHIPS = [
+  { label: "Encapsulation", href: "/cities/tampa?service=encapsulation" },
+  { label: "Foundation", href: "/cities/houston?service=foundation-repair" },
+  { label: "Pier & beam", href: "/cities/dallas-fort-worth" },
+] as const;
+
 export function getWave1Hub(slug: string) {
   return WAVE1_HUBS.find((hub) => hub.slug === slug) ?? null;
+}
+
+export function getHomepageStripEntry(slug: string) {
+  return HOMEPAGE_STRIP.find((item) => item.slug === slug) ?? null;
 }
 
 export function hubPageDescription(slug: string, fallback?: string | null) {
@@ -124,4 +192,57 @@ export function hubPageTitle(slug: string, service?: "foundation" | "encapsulati
   if (service === "foundation") return `${fallback} Foundation Repair Contractors`;
   if (service === "encapsulation") return `${fallback} Crawl Space Encapsulation Contractors`;
   return `${fallback} Foundation Repair & Crawl Encapsulation`;
+}
+
+export function homepageCardHref(slug: string) {
+  const entry = getHomepageStripEntry(slug);
+  if (entry?.emphasis === "moisture") return `/cities/${slug}?service=encapsulation`;
+  if (entry?.emphasis === "foundation") return `/cities/${slug}?service=foundation-repair`;
+  return `/cities/${slug}`;
+}
+
+export function homepageCardCta(slug: string) {
+  const entry = getHomepageStripEntry(slug);
+  if (entry?.emphasis === "moisture") return "Encapsulation";
+  if (entry?.emphasis === "foundation") return "Foundation repair";
+  return null;
+}
+
+export function homepageCardChips(slug: string): { label: string; href: string }[] {
+  const entry = getHomepageStripEntry(slug);
+  if (!entry) return [];
+  const chips: { label: string; href: string }[] = [];
+  if ("foundationChip" in entry && entry.foundationChip) {
+    chips.push({ label: "Foundation", href: `/cities/${slug}?service=foundation-repair` });
+  }
+  if ("pierBeamChip" in entry && entry.pierBeamChip) {
+    chips.push({ label: "Pier & beam", href: `/cities/${slug}` });
+  }
+  return chips;
+}
+
+type HomepageStripCity = {
+  slug: string;
+  name: string;
+  state: string;
+  region: string;
+  heroImage?: string | null;
+  listings?: unknown[];
+};
+
+/** Order DB cities by the explicit homepage strip; fall back to hub metadata if a row is missing. */
+export function buildHomepageStrip(cities: HomepageStripCity[]) {
+  const bySlug = new Map(cities.map((city) => [city.slug, city]));
+  return HOMEPAGE_STRIP.map((item) => {
+    const hub = getWave1Hub(item.slug);
+    const city = bySlug.get(item.slug);
+    return {
+      ...item,
+      name: city?.name ?? hub?.name ?? item.slug,
+      state: city?.state ?? hub?.state ?? "",
+      region: city?.region ?? hub?.region ?? "",
+      heroImage: city?.heroImage ?? null,
+      count: city?.listings?.length ?? 0,
+    };
+  });
 }

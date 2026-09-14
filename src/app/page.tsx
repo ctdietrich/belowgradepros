@@ -4,7 +4,14 @@ import { CityCard } from "@/components/CityCard";
 import { FoundingCta } from "@/components/FoundingCta";
 import { JsonLd } from "@/components/JsonLd";
 import { ListingCard } from "@/components/ListingCard";
-import { site } from "@/lib/config";
+import {
+  HOMEPAGE_SERVICE_CHIPS,
+  buildHomepageStrip,
+  homepageCardChips,
+  homepageCardCta,
+  homepageCardHref,
+  site,
+} from "@/lib/config";
 import { organizationJsonLd } from "@/lib/jsonld";
 import { getCities, getPublishedListings } from "@/lib/listings";
 
@@ -15,6 +22,7 @@ export default async function HomePage() {
     getPublishedListings({ featured: true }),
     getCities(),
   ]);
+  const strip = buildHomepageStrip(cities);
 
   return (
     <main>
@@ -36,9 +44,9 @@ export default async function HomePage() {
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-concrete/85">{site.tagline}</p>
           <p className="mt-3 max-w-2xl text-base leading-7 text-concrete/70">
-            Foundation repair and crawl-space / basement encapsulation contractors — Wave 1 hubs
-            first: Houston, Dallas–Fort Worth, Atlanta, Tampa, Chicago, then Charlotte, Austin, and
-            St. Louis.
+            Foundation repair and crawl-space / basement encapsulation contractors — Wave 1 strip:
+            Tampa, Houston, Atlanta, Charlotte, Jacksonville, Orlando, Nashville, then Dallas–Fort
+            Worth (clay / pier &amp; beam).
           </p>
           <div className="mt-10 flex flex-wrap gap-3">
             <Link
@@ -56,6 +64,18 @@ export default async function HomePage() {
             <Link href="/founding" className="rounded-full px-5 py-2.5 text-sm text-amber hover:text-concrete">
               Founding listing →
             </Link>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-xs uppercase tracking-[0.18em] text-concrete/60">Desks</span>
+            {HOMEPAGE_SERVICE_CHIPS.map((chip) => (
+              <Link
+                key={chip.href}
+                href={chip.href}
+                className="rounded-full border border-concrete/35 px-3 py-1.5 text-sm text-page hover:bg-page hover:text-slate-deep"
+              >
+                {chip.label}
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -79,18 +99,21 @@ export default async function HomePage() {
 
       <section className="bg-concrete-light">
         <div className="mx-auto max-w-6xl px-5 py-16">
-          <p className="text-xs uppercase tracking-[0.2em] text-amber-deep">Wave 1 metros</p>
-          <h2 className="mt-2 font-display text-4xl text-slate">Where we start</h2>
+          <p className="text-xs uppercase tracking-[0.2em] text-amber-deep">Wave 1 strip</p>
+          <h2 className="mt-2 font-display text-4xl text-slate">Moisture first, then DFW clay</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {cities.map((city) => (
+            {strip.map((city) => (
               <CityCard
-                key={city.id}
+                key={city.slug}
                 slug={city.slug}
                 name={city.name}
                 state={city.state}
                 region={city.region}
                 heroImage={city.heroImage}
-                count={city.listings.length}
+                count={city.count}
+                href={homepageCardHref(city.slug)}
+                cta={homepageCardCta(city.slug)}
+                chips={homepageCardChips(city.slug)}
               />
             ))}
           </div>

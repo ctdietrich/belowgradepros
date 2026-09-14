@@ -53,8 +53,22 @@ export const SERVICE_KEYS = [
   ...ADDITIONAL_SERVICES.map((item) => item.key),
 ] as const;
 
-/** Wave 1 city hubs — SEO lock, publish order. Re-exported from `hubs.ts`. */
-export { WAVE1_CITIES, WAVE1_HUBS, WAVE1_HUB_SLUGS, getWave1Hub, hubPageTitle } from "./hubs";
+/** Wave 1 city hubs — SEO lock. Homepage strip is `HOMEPAGE_STRIP`, not DB sortOrder. */
+export {
+  WAVE1_CITIES,
+  WAVE1_HUBS,
+  WAVE1_HUB_SLUGS,
+  DEPRIORITIZED_HUB_SLUGS,
+  HOMEPAGE_STRIP,
+  HOMEPAGE_STRIP_SLUGS,
+  HOMEPAGE_SERVICE_CHIPS,
+  getWave1Hub,
+  hubPageTitle,
+  homepageCardHref,
+  homepageCardCta,
+  homepageCardChips,
+  buildHomepageStrip,
+} from "./hubs";
 
 export const brand = {
   slate: "#1E293B",

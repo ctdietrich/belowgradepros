@@ -36,7 +36,7 @@ Brand lock: typographic wordmark **BelowGrade** (slate) + **Pros** (amber, heavi
 
 FTF `/destinations` is `/cities`. There is no `/last-minute`, `/guides`, `/lodges`, `/c/waterproofing`, or Beehiiv.
 
-Wave 1 hub slugs (publish order): `houston` → `dallas-fort-worth` → `atlanta` → `tampa` → `chicago` → `charlotte` → `austin` → `st-louis`. Tampa is `tampa`, not `tampa-bay`.
+Homepage strip (8 cards, `HOMEPAGE_STRIP` in `src/lib/hubs.ts`): `tampa` → `houston` → `atlanta` → `charlotte` → `jacksonville` → `orlando` → `nashville` → `dallas-fort-worth`. Chicago, Austin, and St. Louis stay as `/cities/{slug}` hubs but are off the primary strip. Tampa is `tampa`, not `tampa-bay`. Do not auto-add Miami.
 
 ## Local setup
 
@@ -56,7 +56,7 @@ Then open [http://localhost:3000](http://localhost:3000).
 Admin: [http://localhost:3000/admin](http://localhost:3000/admin)  
 Default local password is `change-me` (set `ADMIN_PASSWORD` in `.env`).
 
-Seed data uses **@example.com** addresses only and includes 17 published contractors plus 1 draft across the eight Wave 1 hubs.
+Seed data uses **@example.com** addresses only and includes 20 published contractors plus 1 draft across Wave 1 hubs (homepage strip plus Chicago, Austin, and St. Louis).
 
 ## Environment
 

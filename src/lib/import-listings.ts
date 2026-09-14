@@ -120,6 +120,13 @@ export const CITY_ALIASES: Record<string, string> = {
   "st louis": "st-louis",
   "saint louis": "st-louis",
   "st louis mo": "st-louis",
+  jacksonville: "jacksonville",
+  "jacksonville fl": "jacksonville",
+  jax: "jacksonville",
+  orlando: "orlando",
+  "orlando fl": "orlando",
+  nashville: "nashville",
+  "nashville tn": "nashville",
 };
 
 export const MAX_IMPORT_CSV_BYTES = 2 * 1024 * 1024;
