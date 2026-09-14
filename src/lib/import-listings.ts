@@ -10,7 +10,6 @@ import {
   normalizeServiceKey,
   type AdditionalServiceKey,
   type PrimaryServiceKey,
-  type ServiceKey,
 } from "./config";
 import { normalizeListingStatus } from "./listing-status";
 
