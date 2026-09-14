@@ -1,0 +1,123 @@
+# Import listings from CSV
+
+Use this when a curated hero sheet needs to land in Postgres without wiping existing data.
+
+`npm run seed` **deletes** listings, cities, claims, and submissions. Do **not** seed production after a real import.
+
+## Admin upload (production)
+
+On Vercel the app already has `DATABASE_URL`. **Do not copy that URL off the project** to run a laptop import. Sign in with the existing `ADMIN_PASSWORD` session and upload the sheet:
+
+1. Open `/admin/login` and enter `ADMIN_PASSWORD`.
+2. Go to `/admin/import`.
+3. Choose the hero CSV. Optionally check **Dry run** (counts only) or **Insert only** (skip existing slugs/names).
+4. Submit. The desk shows **created / updated / skipped** counts, plus any row errors or warnings.
+
+`/admin/import` is inside the same `admin/(console)` layout as the rest of the desk. The server action calls `requireAdmin()` before reading the file. There is **no** public or unauthenticated import route.
+
+The upload uses `src/lib/import-listings.ts` — the same parser, aliases, status mapping, and upsert as `npm run import:listings`.
+
+## CLI (local / machines that already have the database URL)
+
+```bash
+# Preview mapping (no writes). Works even without a database if you only want parse/status checks.
+npm run import:listings -- data/hero-seed.sample.csv --dry-run
+
+# Built-in mapping tests (candidate/ready → published, aliases, emails)
+npm run import:listings -- --self-test
+
+# Write to the database in DATABASE_URL
+npm run import:listings -- /absolute/path/to/hero.csv
+```
+
+Then confirm on the public site and `/admin`. Prefer **`/admin/import`** for production so `DATABASE_URL` never leaves Vercel.
+
+## Expected columns
+
+See [`data/hero-seed.sample.csv`](../data/hero-seed.sample.csv) for a complete header row. Headers are matched **case-insensitively**; spaces and hyphens become underscores (`Source URL` → `source_url`).
+
+Ops-folder columns (align with seed fields):
+
+| Logical field | Prisma | Accepted headers (any one) |
+| --- | --- | --- |
+| name | `name` | `name`, `listing`, `listing_name`, `business`, `title`, `contractor` |
+| city | `homeCity` | `city`, `home_city`, `locality` |
+| state | `homeState` | `state`, `home_state`, `st` |
+| metro | `ListingCity` → `City` | `metro`, `metros`, `hub`, `destination`, `location` |
+| services | `services` (JSON) | `services`, `service`, `service_flags`, `flags` |
+| phone | `phone` | `phone`, `telephone`, `tel` |
+| website | `website` | `website`, `url`, `web`, `site` |
+| bio | `bio` | `bio`, `description`, `about`, `blurb` |
+| license_id | `licenseId` | `license_id`, `license`, `license_number` |
+| source_url | `sourceUrl` | `source_url`, `source`, `attribution` |
+| status | `status` | `status`, `publish_status` |
+| contact email | `contactEmail` | `contact_email`, `email`, `contact` (if it looks like an email) |
+| notes | `tagline` if no tagline; also bio fallback | `notes`, `note`, `internal_notes` |
+| claimable | `claimable` | `claimable`, `claim`, `can_claim` |
+| featured / verified | booleans | `featured`, `hero` / `verified` |
+| tagline | `tagline` | `tagline`, `subtitle`, `headline` |
+| slug | `slug` | `slug`, `permalink` |
+| photos | `photos` (JSON) | `photos`, `images`, `photo_urls` |
+| region | new cities only | `region` |
+
+Comma, semicolon, tab, or `|` lists work for services, photos, and metros. Quoted fields and newlines inside quotes are supported. A UTF-8 BOM is stripped.
+
+There is **no** `notes` column on `Listing`. Notes become the tagline when `tagline` is empty.
+
+### Service flags
+
+Stored as a JSON array of keys. Multi-select is allowed (a shop can be `foundation_repair` + `encapsulation`).
+
+| Key | Accepted labels |
+| --- | --- |
+| `foundation_repair` | Foundation repair, foundation, repair |
+| `encapsulation` | Encapsulation, crawl space, crawlspace |
+| `waterproofing` | Waterproofing, waterproof |
+| `pier_beam` | Pier & beam, pier and beam, pier |
+| `slab` | Slab, slab foundation |
+
+Unknown tokens are dropped with a warning.
+
+### Status → published
+
+These CSV values are stored as **`published`** and appear on the public directory:
+
+`published`, `candidate`, `ready`, `live`, `approved`, `active`, `hero`
+
+These stay **`draft`**:
+
+`draft`, `pending`, `unpublished`, `hidden`, `review`, `hold`
+
+An empty status on import defaults to **published**. The admin “New listing” form still defaults to draft.
+
+### Type
+
+v1 is a single listing type: `contractor`. Blank or unknown `type` values become `contractor`.
+
+### City hubs
+
+The script matches existing `City` rows by slug, name, and aliases (`DFW` → Dallas–Fort Worth, `Jax` → Jacksonville, `South Florida` → Miami–Fort Lauderdale, and similar).
+
+If `metro` is empty, `city` is used as the hub name.
+
+Missing hubs are **created** unless you pass `--no-create-cities`. Created rows get a slugified name and a short placeholder description.
+
+### Emails
+
+`contactEmail` is required on the model. Rows without a valid email get `{slug}@example.com` and a warning. **Do not invent operator emails for real businesses.** Use `example.com` in sheets and sample data until the operator claims the profile.
+
+## Flags
+
+| Flag | Meaning |
+| --- | --- |
+| `--dry-run` | Parse, resolve cities, print create/update. No writes. |
+| `--insert-only` | Skip when slug or name already exists (default is upsert). |
+| `--no-create-cities` | Error the row instead of inserting a city hub. |
+| `--self-test` | Mapping tests; no database. |
+| `--help` | Usage. |
+
+Re-runs upsert by **slug** or case-insensitive **name**. An explicit `slug` column may rename; a generated slug will not overwrite an existing listing’s slug.
+
+## Sample vs production sheet
+
+`data/hero-seed.sample.csv` is fictional desk copy. Names are invented; every address is `@example.com`. Do not commit a real ops sheet here if it contains personal emails or unpaid-for operator data.

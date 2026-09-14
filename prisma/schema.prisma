@@ -1,0 +1,83 @@
+// BelowGradePros listing directory (PostgreSQL via DATABASE_URL).
+// Cloned from the FishTheFlats directory kit; Destination → City, species → services.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Metro hub (FTF Destination). US national, metros first.
+model City {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  state       String
+  region      String
+  description String
+  heroImage   String?
+  listings    ListingCity[]
+}
+
+model Listing {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  type         String        @default("contractor")
+  name         String
+  tagline      String?
+  bio          String
+  contactEmail String
+  website      String?
+  phone        String?
+  homeCity     String?
+  homeState    String?
+  licenseId    String?
+  photos       Json
+  services     Json
+  featured     Boolean       @default(false)
+  verified     Boolean       @default(false)
+  status       String        @default("draft")
+  sourceUrl    String?
+  claimable    Boolean       @default(true)
+  claimedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  cities       ListingCity[]
+  claims       ClaimRequest[]
+}
+
+model ListingCity {
+  listingId String
+  cityId    String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  city      City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, cityId])
+}
+
+model ClaimRequest {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  message   String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
+
+model Submission {
+  id        String   @id @default(cuid())
+  type      String
+  name      String
+  email     String
+  website   String?
+  cities    String
+  services  String
+  bio       String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}

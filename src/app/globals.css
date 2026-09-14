@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --slate: #1e293b;
+  --slate-deep: #0f172a;
+  --concrete: #c9b8a6;
+  --amber: #d97706;
+  --page: #f7f4f0;
+
+  --slate-soft: #334155;
+  --concrete-light: #e4d9cc;
+  --amber-deep: #b45309;
+  --page-light: #fbfaf7;
+  --muted: #64748b;
+}
+
+@theme inline {
+  --color-slate: var(--slate);
+  --color-slate-deep: var(--slate-deep);
+  --color-slate-soft: var(--slate-soft);
+  --color-concrete: var(--concrete);
+  --color-concrete-light: var(--concrete-light);
+  --color-amber: var(--amber);
+  --color-amber-deep: var(--amber-deep);
+  --color-page: var(--page);
+  --color-page-light: var(--page-light);
+  --color-muted: var(--muted);
+  --color-ink: var(--slate);
+  --color-paper: var(--page);
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--page);
+  color: var(--slate);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+}
+
+a {
+  text-underline-offset: 0.18em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--amber) 35%, white);
+  color: var(--slate-deep);
+}
