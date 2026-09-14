@@ -11,7 +11,7 @@ import {
   type AdditionalServiceKey,
   type PrimaryServiceKey,
 } from "./config";
-import { normalizeListingStatus } from "./listing-status";
+import { isRejectListingStatus, normalizeListingStatus } from "./listing-status";
 
 export type ListingType = "contractor";
 
@@ -38,8 +38,11 @@ export type MappedListing = {
   sourceUrl: string | null;
   claimable: boolean;
   cityNames: string[];
+  metroSlugFromCsv: boolean;
   region?: string;
   notes?: string;
+  photoPolicy?: string;
+  growthFlag?: string;
   warnings: string[];
 };
 
@@ -63,6 +66,7 @@ export type ImportResult = {
 const NAME_KEYS = ["name", "listing", "listing_name", "business", "business_name", "title", "operator", "contractor"];
 const TYPE_KEYS = ["type", "listing_type", "kind", "category", "operator_type"];
 const METRO_KEYS = ["metro", "metros", "hub", "city_hub", "destination", "destinations", "dest", "location", "place"];
+const METRO_SLUG_KEYS = ["metro_slug", "metroslug", "city_slug", "hub_slug"];
 const CITY_KEYS = ["city", "home_city", "locality"];
 const STATE_KEYS = ["state", "home_state", "st"];
 const SERVICE_KEYS_CSV = ["services", "service", "service_flags", "flags", "species"];
@@ -75,6 +79,8 @@ const SOURCE_KEYS = ["source_url", "sourceurl", "source", "sourced_from", "attri
 const STATUS_KEYS = ["status", "publish_status", "listing_status"];
 const NOTES_KEYS = ["notes", "note", "internal_notes", "ops_notes"];
 const CLAIMABLE_KEYS = ["claimable", "claim", "can_claim"];
+const GROWTH_FLAG_KEYS = ["growth_flag", "growthflag", "growth", "flags_ops"];
+const PHOTO_POLICY_KEYS = ["photo_policy", "photopolicy"];
 const PRIMARY_KEYS = ["primary", "primary_service", "focus", "desk"];
 const FOUNDING_KEYS = ["founding", "founding_listing", "paid"];
 const FEATURED_KEYS = ["featured", "feature", "hero"];
@@ -355,11 +361,17 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   const slug = slugify(csvSlug || name);
   if (!slug) return { error: `Row ${index + 2}: could not build a slug for "${name}"` };
 
+  const metroSlug = getField(row, METRO_SLUG_KEYS);
   const metroValue = getField(row, METRO_KEYS);
   const homeCity = getField(row, CITY_KEYS) || null;
   const homeState = getField(row, STATE_KEYS) || null;
-  const cityNames = splitMetros(metroValue || homeCity || "");
+  const metroSlugFromCsv = Boolean(metroSlug);
+  const cityNames = metroSlug
+    ? parseList(metroSlug).flatMap((item) => splitMetros(item))
+    : splitMetros(metroValue || homeCity || "");
   if (!cityNames.length) warnings.push(`No metro for "${name}"`);
+  const photoPolicy = getField(row, PHOTO_POLICY_KEYS) || undefined;
+  const growthFlag = getField(row, GROWTH_FLAG_KEYS);
 
   const notes = getField(row, NOTES_KEYS);
   const tagline = getField(row, TAGLINE_KEYS) || notes || null;
@@ -391,6 +403,13 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   const sourceUrl = normalizeWebsite(getField(row, SOURCE_KEYS)) || website;
   const phone = getField(row, PHONE_KEYS) || (!looksLikeEmail(contactField) ? contactField : "") || null;
   const licenseId = getField(row, LICENSE_KEYS) || null;
+  const rawStatus = getField(row, STATUS_KEYS);
+  const status = normalizeListingStatus(rawStatus, "draft");
+  const growthTokens = parseList(growthFlag).map((item) => item.trim().toLowerCase());
+  const growthClaimable = growthTokens.some((item) => item === "claimable" || item === "claim");
+  const claimable = isRejectListingStatus(rawStatus)
+    ? true
+    : growthClaimable || parseBoolean(getField(row, CLAIMABLE_KEYS), true);
 
   return {
     slug,
@@ -411,12 +430,15 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
     featured: parseBoolean(getField(row, FEATURED_KEYS), false),
     founding: parseBoolean(getField(row, FOUNDING_KEYS), false),
     verified: parseBoolean(getField(row, VERIFIED_KEYS), false),
-    status: normalizeListingStatus(getField(row, STATUS_KEYS), "published"),
+    status,
     sourceUrl,
-    claimable: parseBoolean(getField(row, CLAIMABLE_KEYS), true),
+    claimable,
     cityNames,
+    metroSlugFromCsv,
     region: getField(row, REGION_KEYS) || undefined,
     notes: notes || undefined,
+    photoPolicy,
+    growthFlag: growthFlag || undefined,
     warnings,
   };
 }
@@ -424,6 +446,12 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
 type CityRecord = { id: string; slug: string; name: string };
 
 export function matchCity(name: string, cities: CityRecord[]): CityRecord | undefined {
+  const raw = name.trim();
+  if (!raw) return undefined;
+  const slugNeedle = raw.toLowerCase();
+  const bySlug = cities.find((city) => city.slug === slugNeedle);
+  if (bySlug) return bySlug;
+
   const needle = normalizePlace(name);
   if (!needle) return undefined;
 

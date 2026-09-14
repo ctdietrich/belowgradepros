@@ -86,7 +86,8 @@ Options:
   --self-test               Run built-in mapping tests
   --help                    Show this message
 
-Hero-ops statuses candidate and ready are stored as published.
+Ops statuses candidate, qa_pass, ready, review, and pending stay draft.
+Only publish / published / live / approved / active / hero go live.
 Do not run npm run seed against production after an import (seed wipes listings).
 `;
 }
@@ -110,33 +111,36 @@ export async function importListings(filePath: string, flags: ImportFlags) {
 }
 
 export function runSelfTests() {
-  const csv = `name,city,state,metro,services,bio,contact_email,website,source_url,status,notes,claimable,license_id
-"Gulf Sample Foundation",Houston,TX,Houston,"foundation_repair, pier_beam","A Houston clay sample shop.","desk@example.com",https://example.com/gulf-sample,https://example.com/source,candidate,"Steel piers first.",yes,TX-FR-10001
-Bayou Sample Encap,Houston,TX,Houston,"encapsulation; waterproofing",,stay@example.com,example.com/bayou,,ready,"Crawl-space liner.",true,TX-EN-20002
-Draft Slab Shop,Austin,TX,Austin,slab,"Draft row.",not-an-email,,,draft,,
+  const csv = `name,city,state,metro,metro_slug,services,bio,email,website,source_url,status,notes,growth_flag,license_id
+"Gulf Sample Foundation",Houston,TX,Houston,houston,"foundation, pier_beam","A Houston clay sample shop.","desk@example.com",https://example.com/gulf-sample,https://example.com/source,candidate,"Steel piers first.",claimable,TX-FR-10001
+Bayou Sample Encap,Houston,TX,Houston,houston,"encapsulation; waterproofing",,stay@example.com,example.com/bayou,,qa_pass,"Crawl-space liner.",claimable,TX-EN-20002
+Draft Slab Shop,Austin,TX,Austin,austin,slab,"Draft row.",not-an-email,,,draft,,
+Ops Publish Shop,Plano,TX,Dallas–Fort Worth,dallas-fort-worth,both,"Published ops row.",pub@example.com,,,publish,,claimable,TX-FR-30003
+Ops Reject Shop,Tampa,FL,Tampa Bay,tampa,encapsulation,"Failed QA.",fail@example.com,,,qa_fail,,
 `;
   const { rows } = parseCsv(csv);
-  if (rows.length !== 3) throw new Error(`expected 3 rows, got ${rows.length}`);
+  if (rows.length !== 5) throw new Error(`expected 5 rows, got ${rows.length}`);
 
   const candidate = mapRow(rows[0], 0);
   if ("error" in candidate) throw new Error(candidate.error);
-  if (candidate.status !== "published") throw new Error("candidate should publish");
+  if (candidate.status !== "draft") throw new Error("candidate must NOT publish");
   if (candidate.type !== "contractor") throw new Error("expected contractor");
-  if (candidate.claimable !== true) throw new Error("claimable yes");
-  if (!candidate.cityNames.includes("Houston")) throw new Error("metro");
+  if (candidate.claimable !== true) throw new Error("growth_flag claimable");
+  if (!candidate.cityNames.includes("houston")) throw new Error("metro_slug houston");
+  if (!candidate.metroSlugFromCsv) throw new Error("metro_slug preferred");
   if (candidate.primaryService !== "foundation") throw new Error("primary foundation");
   if (!candidate.services.includes("pier_beam")) throw new Error("badge pier_beam");
   if (candidate.founding !== false) throw new Error("founding defaults false");
   if (candidate.licenseId !== "TX-FR-10001") throw new Error("license_id");
   if (candidate.homeCity !== "Houston" || candidate.homeState !== "TX") throw new Error("city/state");
 
-  const ready = mapRow(rows[1], 1);
-  if ("error" in ready) throw new Error(ready.error);
-  if (ready.status !== "published") throw new Error("ready should publish");
-  if (ready.website !== "https://example.com/bayou") throw new Error("website protocol");
-  if (ready.tagline !== "Crawl-space liner.") throw new Error("notes → tagline");
-  if (ready.primaryService !== "encapsulation") throw new Error("primary encapsulation");
-  if (ready.services.join(",") !== "waterproofing") throw new Error(`services ${ready.services}`);
+  const qaPass = mapRow(rows[1], 1);
+  if ("error" in qaPass) throw new Error(qaPass.error);
+  if (qaPass.status !== "draft") throw new Error("qa_pass must stay draft");
+  if (qaPass.website !== "https://example.com/bayou") throw new Error("website protocol");
+  if (qaPass.tagline !== "Crawl-space liner.") throw new Error("notes → tagline");
+  if (qaPass.primaryService !== "encapsulation") throw new Error("primary encapsulation");
+  if (qaPass.services.join(",") !== "waterproofing") throw new Error(`services ${qaPass.services}`);
 
   const draft = mapRow(rows[2], 2);
   if ("error" in draft) throw new Error(draft.error);
@@ -146,6 +150,25 @@ Draft Slab Shop,Austin,TX,Austin,slab,"Draft row.",not-an-email,,,draft,,
     throw new Error("missing email warning");
   }
 
+  const published = mapRow(rows[3], 3);
+  if ("error" in published) throw new Error(published.error);
+  if (published.status !== "published") throw new Error("publish must publish");
+  if (published.primaryService !== "both") throw new Error("services both → primary");
+  if (published.cityNames.join(",") !== "dallas-fort-worth") throw new Error("metro_slug DFW");
+  if (
+    !matchCity(published.cityNames[0], [
+      { id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" },
+    ])
+  ) {
+    throw new Error("metro_slug must link Wave 1 DFW");
+  }
+
+  const rejected = mapRow(rows[4], 4);
+  if ("error" in rejected) throw new Error(rejected.error);
+  if (rejected.status !== "draft") throw new Error("qa_fail must insert as draft");
+  if (rejected.claimable !== true) throw new Error("qa_fail stays claimable");
+  if (rejected.cityNames.join(",") !== "tampa") throw new Error("metro_slug tampa");
+
   const alt = parseCsv(`Listing Name\tKind\tMetro\tServices\tStatus
 Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
 `);
@@ -153,11 +176,19 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   if ("error" in mappedAlt) throw new Error(mappedAlt.error);
   if (mappedAlt.name !== "Alias Contractor") throw new Error("tab alias name");
   if (mappedAlt.type !== "contractor") throw new Error("type contractor");
-  if (mappedAlt.status !== "published") throw new Error("READY → published");
+  if (mappedAlt.status !== "draft") throw new Error("READY must stay draft");
   if (mappedAlt.primaryService !== "foundation" || !mappedAlt.services.includes("slab")) {
     throw new Error("service aliases");
   }
 
+  const wave1 = WAVE1_HUB_SLUGS.map((slug, index) => ({
+    id: String(index),
+    slug,
+    name: slug,
+  }));
+  if (!matchCity("dallas-fort-worth", wave1)) throw new Error("metro_slug dallas-fort-worth");
+  if (!matchCity("tampa", wave1)) throw new Error("metro_slug tampa");
+  if (!matchCity("st-louis", wave1)) throw new Error("metro_slug st-louis");
   if (!matchCity("Dallas", [{ id: "1", slug: "dallas-fort-worth", name: "Dallas–Fort Worth" }])) {
     throw new Error("alias Dallas");
   }
@@ -175,22 +206,27 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   const samplePath = resolve(repoRoot, "data/hero-seed.sample.csv");
   const sample = parseCsv(readFileSync(samplePath, "utf8"));
   if (sample.rows.length < 5) throw new Error("sample CSV is too short");
-  const statuses = sample.rows.map((row, index) => {
+  const mappedSample = sample.rows.map((row, index) => {
     const mapped = mapRow(row, index);
     if ("error" in mapped) throw new Error(mapped.error);
-    return mapped.status;
+    return mapped;
   });
+  const statuses = mappedSample.map((item) => item.status);
   if (!statuses.includes("published") || !statuses.includes("draft")) {
     throw new Error("sample CSV should include published and draft rows");
   }
   const candidateRow = sample.rows.find((row) => /candidate/i.test(row.status ?? ""));
   if (!candidateRow) throw new Error("sample CSV should include a candidate row");
   const candidateMapped = mapRow(candidateRow, 0);
-  if ("error" in candidateMapped || candidateMapped.status !== "published") {
-    throw new Error("sample candidate row must publish");
+  if ("error" in candidateMapped || candidateMapped.status !== "draft") {
+    throw new Error("sample candidate row must stay draft");
   }
-  if (candidateMapped.primaryService !== "foundation" || !candidateMapped.founding) {
-    throw new Error("sample candidate should be foundation + founding");
+  if (candidateMapped.primaryService !== "foundation" || !candidateMapped.metroSlugFromCsv) {
+    throw new Error("sample candidate should be foundation + metro_slug");
+  }
+  const publishRow = mappedSample.find((item) => item.status === "published");
+  if (!publishRow?.metroSlugFromCsv || !WAVE1_HUB_SLUGS.includes(publishRow.cityNames[0] as (typeof WAVE1_HUB_SLUGS)[number])) {
+    throw new Error("sample publish row must link a Wave 1 metro_slug");
   }
   if (sample.rows.some((row) => {
     const email = (row.contact_email || row.email || "").toLowerCase();

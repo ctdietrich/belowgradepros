@@ -15,9 +15,8 @@ export default async function NewListingPage() {
         <Link href="/admin/import" className="text-amber-deep hover:underline">
           /admin/import
         </Link>{" "}
-        or <code className="text-slate">npm run import:listings</code>; status values{" "}
-        <code className="text-slate">candidate</code> and <code className="text-slate">ready</code>{" "}
-        publish immediately.
+        or <code className="text-slate">npm run import:listings</code>. Ops{" "}
+        <code className="text-slate">candidate</code> rows stay draft until you publish them here.
       </p>
       <div className="mt-8">
         <ListingForm cities={cities} />

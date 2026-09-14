@@ -34,7 +34,7 @@ Defined in `prisma/schema.prisma`:
   - `photos[]` (JSON)
   - `homeCity` / `homeState` / `licenseId` — ops fields, not in FTF
   - `featured`, `founding`, `verified`, `status` (`draft` \| `published`)
-  - CSV / admin aliases `candidate` and `ready` normalize to `published` (`src/lib/listing-status.ts`)
+  - CSV `publish` / `published` / `live` / `approved` / `active` / `hero` → `published`. `candidate`, `qa_pass`, `ready`, `qa_fail`, `reject` stay `draft` (`src/lib/listing-status.ts`)
   - `sourceUrl`, `claimable`, `contactEmail` / `website`
 - **ListingCity** — many-to-many (FTF `ListingDestination`)
 - **Submission** / **ClaimRequest** — inbound supply (`cities` + badges + `primaryService` + `founding`)
@@ -145,7 +145,7 @@ docs/import-listings.md       column aliases + production runbook
 src/lib/hubs.ts               Wave 1 slugs, hub titles/meta
 src/lib/config.ts             brand + types (clone here first)
 src/lib/listings.ts           public queries
-src/lib/listing-status.ts     published aliases (candidate/ready)
+src/lib/listing-status.ts     publish aliases only; candidate stays draft
 src/lib/admin.ts              password cookie
 src/app/actions.ts            mutations
 src/app/l/[slug]/page.tsx     listing + JSON-LD

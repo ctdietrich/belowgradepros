@@ -30,8 +30,8 @@ export default async function AdminPage() {
           <Link href="/admin/import" className="text-amber-deep hover:underline">
             /admin/import
           </Link>{" "}
-          (same mapping as <code>npm run import:listings</code>). Status{" "}
-          <code>candidate</code> / <code>ready</code> publish to the public directory.
+          (same mapping as <code>npm run import:listings</code>). Only{" "}
+          <code>publish</code> / <code>published</code> go live; <code>candidate</code> stays draft.
         </p>
       </header>
 

@@ -104,7 +104,7 @@ Then optionally load **sample** data (dev / empty staging only — this **wipes*
 npm run seed
 ```
 
-To load a curated hero CSV **without** wiping (production or staging), upload it at **`/admin/import`** while signed in with `ADMIN_PASSWORD`. Status values `candidate` and `ready` publish.
+To load a curated hero CSV **without** wiping (production or staging), upload it at **`/admin/import`** while signed in with `ADMIN_PASSWORD`. Only `publish` / `published` / `live` / `approved` / `active` / `hero` go live. `candidate`, `qa_pass`, `ready`, and `qa_fail` stay **draft**.
 
 ```bash
 npm run import:listings -- --dry-run data/hero-seed.sample.csv

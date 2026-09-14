@@ -13,8 +13,10 @@ export default function AdminImportPage() {
         <code className="text-slate">ADMIN_PASSWORD</code> session; there is no public import URL.
       </p>
       <p className="mt-2 text-xs text-muted">
-        Status values <code className="text-slate">candidate</code> and{" "}
-        <code className="text-slate">ready</code> publish immediately. Do not run{" "}
+        Only <code className="text-slate">publish</code> /{" "}
+        <code className="text-slate">published</code> go live.{" "}
+        <code className="text-slate">candidate</code>, <code className="text-slate">qa_pass</code>, and{" "}
+        <code className="text-slate">ready</code> stay draft. Do not run{" "}
         <code className="text-slate">npm run seed</code> against production after an import.
       </p>
       <div className="mt-8">
