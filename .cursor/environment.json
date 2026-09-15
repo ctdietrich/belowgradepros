@@ -1,6 +1,6 @@
 {
   "name": "BelowGradePros",
-  "install": "npm install && npx prisma migrate deploy && npm run seed",
+  "install": "npm install && npx prisma migrate deploy",
   "start": "npm run dev -- --hostname 0.0.0.0 --port 3000",
   "terminals": [
     {
@@ -8,5 +8,11 @@
       "command": "npm run dev -- --hostname 0.0.0.0 --port 3000"
     }
   ],
-  "ports": [3000]
+  "ports": [
+    {
+      "name": "Next.js",
+      "port": 3000
+    }
+  ]
 }
+
