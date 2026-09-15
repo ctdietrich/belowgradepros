@@ -418,8 +418,7 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   else if (emailField) warnings.push(`Ignored invalid email "${emailField}"`);
 
   if (!contactEmail) {
-    contactEmail = `${slug.replace(/-/g, ".")}@example.com`;
-    warnings.push(`No contact email for "${name}"; using ${contactEmail}`);
+    warnings.push(`No contact email for "${name}"`);
   }
 
   const website = normalizeWebsite(getField(row, WEBSITE_KEYS));

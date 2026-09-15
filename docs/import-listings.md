@@ -127,7 +127,7 @@ Missing hubs are **created** unless you pass `--no-create-cities`. Created rows 
 
 ### Emails
 
-`contactEmail` is required on the model. The ops `email` column maps here. Rows without a valid email get `{slug}@example.com` and a warning. **Do not invent operator emails for real businesses.** Use `example.com` in sheets and sample data until the operator claims the profile.
+`contactEmail` is required on the model and stored as an empty string when the ops `email` column is blank or invalid. The importer never synthesizes `{slug}@example.com`. Public listing pages and JSON-LD omit mailto / email when the value is blank or ends with `@example.com`. **Do not invent operator emails for real businesses.** Sample CSV rows may still use `example.com` as fictional desk copy; those addresses are not shown on the public site.
 
 ### growth_flag
 

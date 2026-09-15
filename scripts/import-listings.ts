@@ -161,9 +161,28 @@ Ops Reject Shop,Tampa,FL,Tampa Bay,tampa,encapsulation,"Failed QA.",fail@example
   const draft = mapRow(rows[2], 2);
   if ("error" in draft) throw new Error(draft.error);
   if (draft.status !== "draft") throw new Error("draft should stay draft");
-  if (!draft.contactEmail.endsWith("@example.com")) throw new Error("example.com fallback email");
+  if (draft.contactEmail !== "") throw new Error("invalid email must stay empty");
+  if (draft.contactEmail.toLowerCase().endsWith("@example.com")) {
+    throw new Error("must not invent @example.com");
+  }
   if (!draft.warnings.some((warning) => warning.includes("No contact email"))) {
     throw new Error("missing email warning");
+  }
+  if (draft.warnings.some((warning) => /using .+@example\.com/i.test(warning))) {
+    throw new Error("must not warn about a synthesized @example.com");
+  }
+
+  const blankEmail = parseCsv(`name,metro_slug,services,email
+Blank Email Shop,austin,slab,
+`);
+  const blankMapped = mapRow(blankEmail.rows[0], 0);
+  if ("error" in blankMapped) throw new Error(blankMapped.error);
+  if (blankMapped.contactEmail !== "") throw new Error("blank CSV email must stay empty");
+  if (blankMapped.contactEmail.toLowerCase().includes("example.com")) {
+    throw new Error("blank CSV must not invent example.com");
+  }
+  if (!blankMapped.warnings.some((warning) => warning.includes("No contact email"))) {
+    throw new Error("blank CSV should warn about missing email");
   }
 
   const published = mapRow(rows[3], 3);

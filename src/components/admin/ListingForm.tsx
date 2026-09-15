@@ -73,8 +73,7 @@ export function ListingForm({
           <input
             name="contactEmail"
             type="email"
-            required
-            defaultValue={listing?.contactEmail}
+            defaultValue={listing?.contactEmail ?? ""}
             className={field}
           />
         </label>
