@@ -40,6 +40,14 @@ export function listingServices(listing: Pick<Listing, "services">) {
   return listingBadges(listing);
 }
 
+/** Public mailto / JSON-LD email. Blank and @example.com placeholders stay hidden. */
+export function publicContactEmail(email: string | null | undefined): string | null {
+  const value = (email ?? "").trim();
+  if (!value) return null;
+  if (value.toLowerCase().endsWith("@example.com")) return null;
+  return value;
+}
+
 const published = publishedListingWhere;
 
 export async function getPublishedListings(filters?: {

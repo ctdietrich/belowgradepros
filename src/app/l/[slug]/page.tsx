@@ -12,7 +12,7 @@ import {
   typeLabel,
 } from "@/lib/config";
 import { listingJsonLd } from "@/lib/jsonld";
-import { asStringArray, getListingBySlug, listingBadges } from "@/lib/listings";
+import { asStringArray, getListingBySlug, listingBadges, publicContactEmail } from "@/lib/listings";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,7 @@ export default async function ListingPage({
   const photos = asStringArray(listing.photos);
   const badges = listingBadges(listing);
   const cities = listing.cities.map((item) => item.city);
+  const contactEmail = publicContactEmail(listing.contactEmail);
 
   return (
     <main>
@@ -128,14 +129,16 @@ export default async function ListingPage({
               take a commission.
             </p>
             <dl className="mt-6 space-y-3 text-sm">
-              <div>
-                <dt className="text-xs uppercase tracking-[0.16em] text-muted">Email</dt>
-                <dd>
-                  <a className="text-amber-deep hover:underline" href={`mailto:${listing.contactEmail}`}>
-                    {listing.contactEmail}
-                  </a>
-                </dd>
-              </div>
+              {contactEmail ? (
+                <div>
+                  <dt className="text-xs uppercase tracking-[0.16em] text-muted">Email</dt>
+                  <dd>
+                    <a className="text-amber-deep hover:underline" href={`mailto:${contactEmail}`}>
+                      {contactEmail}
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
               {listing.website ? (
                 <div>
                   <dt className="text-xs uppercase tracking-[0.16em] text-muted">Website</dt>

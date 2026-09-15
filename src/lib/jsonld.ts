@@ -8,7 +8,7 @@ import {
   site,
   typeLabel,
 } from "./config";
-import { listingBadges, type ListingWithCities } from "./listings";
+import { listingBadges, publicContactEmail, type ListingWithCities } from "./listings";
 
 export function listingJsonLd(listing: ListingWithCities) {
   const cities = listing.cities.map((item) => item.city.name);
@@ -27,7 +27,7 @@ export function listingJsonLd(listing: ListingWithCities) {
     name: listing.name,
     description: listing.tagline ?? listing.bio,
     url: absoluteUrl(listingPath(listing.slug)),
-    email: listing.contactEmail,
+    email: publicContactEmail(listing.contactEmail) ?? undefined,
     image,
     telephone: listing.phone ?? undefined,
     sameAs: listing.website ? [listing.website] : undefined,
