@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CityCard } from "@/components/CityCard";
+import { EmptyListings } from "@/components/EmptyListings";
 import { JsonLd } from "@/components/JsonLd";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHero } from "@/components/PageHero";
 import {
   cityPath,
-  hubServiceQueryParam,
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
@@ -35,14 +35,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const { service } = await searchParams;
   const city = await getCityBySlug(slug);
-  if (!city) return { title: "City hub" };
+  if (!city) return { title: "City" };
   const filter = normalizeHubServiceQuery(service);
-  const query = hubServiceQueryParam(filter);
   const title = hubPageTitle(city.slug, filter);
   return {
     title,
     description: hubPageDescription(city.slug, city.description),
-    alternates: { canonical: cityPath(city.slug, query ?? undefined) },
+    alternates: { canonical: cityPath(city.slug) },
   };
 }
 
@@ -101,15 +100,24 @@ export default async function CityDetailPage({
             ))}
         </div>
         <h2 className="mt-8 font-display text-3xl text-slate">Contractors</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
-        {!listings.length ? (
-          <p className="mt-6 text-muted">No published contractors in this metro yet.</p>
-        ) : null}
-        <h3 className="mt-16 font-display text-2xl text-slate">Other hubs</h3>
+        {listings.length ? (
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8">
+            <EmptyListings
+              message={
+                serviceFilter
+                  ? "No listings match — try another filter or browse every contractor in this metro."
+                  : "No published contractors in this metro yet. Try another city or check back as profiles are added."
+              }
+            />
+          </div>
+        )}
+        <h2 className="mt-16 font-display text-2xl text-slate">Other hubs</h2>
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {others.slice(0, 3).map((item) => (
             <CityCard

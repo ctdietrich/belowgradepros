@@ -357,7 +357,7 @@ export function isCatalogEncapHub(slug: string) {
 /** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
 export const HOMEPAGE_SERVICE_CHIPS = [
   { label: "Encapsulation", href: "/cities/tampa?service=encapsulation" },
-  { label: "Foundation", href: "/cities/houston?service=foundation-repair" },
+  { label: "Foundation repair", href: "/cities/houston?service=foundation-repair" },
   { label: "Pier & beam", href: "/cities/dallas-fort-worth" },
 ] as const;
 
@@ -458,7 +458,7 @@ export function buildHomepageStrip(cities: HomepageStripCity[]) {
     const city = bySlug.get(item.slug);
     return {
       ...item,
-      name: city?.name ?? hub?.name ?? item.slug,
+      name: hub?.name ?? city?.name ?? item.slug,
       state: city?.state ?? hub?.state ?? "",
       region: city?.region ?? hub?.region ?? "",
       heroImage: city?.heroImage ?? null,

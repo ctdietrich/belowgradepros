@@ -13,6 +13,7 @@ import {
 import {
   normalizeAdditionalService,
   normalizePrimaryService,
+  site,
   type AdditionalServiceKey,
 } from "@/lib/config";
 import { foundingPaymentLink } from "@/lib/stripe";
@@ -104,7 +105,7 @@ export async function submitListing(
   return {
     ok: true,
     message: founding
-      ? "Received. We will review the listing and follow up on the founding path when Stripe is live."
+      ? `Received. We will review the listing and follow up from ${site.email} about featured placement.`
       : "Received. We review submissions before they appear in the directory.",
   };
 }
@@ -140,8 +141,8 @@ export async function submitClaim(
   return {
     ok: true,
     message: founding
-      ? "Claim received. We will write back on the profile and the founding listing path."
-      : "Claim received. We will write back from the editorial desk.",
+      ? `Claim received. We will write back from ${site.email} about the profile and featured placement.`
+      : `Claim received. We will write back from ${site.email}.`,
   };
 }
 
@@ -150,8 +151,8 @@ export async function startFoundingCheckout(
   formData: FormData,
 ): Promise<ActionState> {
   const email = readString(formData, "email").toLowerCase();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { ok: false, error: "Please enter a valid email." };
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "Please enter a valid email so we can follow up." };
   }
 
   const link = foundingPaymentLink();
@@ -159,10 +160,23 @@ export async function startFoundingCheckout(
     redirect(link);
   }
 
+  await prisma.submission.create({
+    data: {
+      type: "contractor",
+      name: "Founding listing request",
+      email,
+      cities: "",
+      primaryService: "foundation",
+      services: "",
+      bio: "Request for founding / featured placement from the founding page.",
+      founding: true,
+    },
+  });
+  revalidatePath("/admin");
+
   return {
     ok: true,
-    message:
-      "Founding checkout is stubbed until Stripe keys or a Payment Link are set. Submit or claim a listing and we will follow up.",
+    message: `Thanks — we will follow up from ${site.email} to activate featured placement.`,
   };
 }
 

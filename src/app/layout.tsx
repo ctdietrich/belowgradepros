@@ -41,9 +41,6 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "en_US",
       type: "website",
     },
-    alternates: {
-      canonical: "/",
-    },
   };
 }
 

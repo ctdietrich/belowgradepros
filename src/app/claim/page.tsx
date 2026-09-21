@@ -3,6 +3,7 @@ import { submitClaim } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
+import { site } from "@/lib/config";
 import { getClaimableListings, resolveClaimableListing } from "@/lib/listings";
 import { foundingPriceLabel } from "@/lib/stripe";
 
@@ -10,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Claim a listing",
-  description: "Claim an existing BelowGradePros contractor profile.",
+  description:
+    "Claim your BelowGradePros contractor profile. Some listings were compiled from public sources so homeowners can find specialists — we transfer them to the company they describe.",
+  alternates: { canonical: "/claim" },
 };
 
 const field =
@@ -29,11 +32,18 @@ export default async function ClaimPage({
   return (
     <main>
       <PageHero
-        kicker="Operators"
-        title="Claim a listing"
-        lede="Some profiles were sourced from public materials and remain claimable. Tell us who you are and we will move the listing under your desk."
+        kicker="Contractors"
+        title="Claim your listing"
+        lede="Some profiles were compiled from public materials so homeowners can find specialists in their metro. If this is your company, tell us who you are and we will transfer the listing to you."
       />
       <section className="mx-auto max-w-2xl space-y-8 px-5 py-12">
+        <p className="text-sm leading-7 text-slate-soft">
+          We review claim requests before changing a public profile. Questions in the meantime:{" "}
+          <a className="text-amber-deep hover:underline" href={`mailto:${site.email}`}>
+            {site.email}
+          </a>
+          .
+        </p>
         <ActionForm action={submitClaim} className="space-y-5" submitLabel="Request claim">
           <label className="block text-sm">
             Listing
@@ -46,6 +56,15 @@ export default async function ClaimPage({
               ))}
             </select>
           </label>
+          {listings.length === 0 ? (
+            <p className="text-sm text-slate-soft">
+              There are no open claims right now.{" "}
+              <a href="/submit" className="text-amber-deep hover:underline">
+                Submit a new listing
+              </a>{" "}
+              instead.
+            </p>
+          ) : null}
           <label className="block text-sm">
             Your name
             <input name="name" required className={field} />
@@ -55,12 +74,18 @@ export default async function ClaimPage({
             <input name="email" type="email" required className={field} />
           </label>
           <label className="block text-sm">
-            How are you connected?
-            <textarea name="message" required rows={5} className={field} />
+            How are you connected to this company?
+            <textarea
+              name="message"
+              required
+              rows={5}
+              className={field}
+              placeholder="Owner, manager, or authorized representative — a sentence is enough."
+            />
           </label>
           <label className="flex items-start gap-2 text-sm">
             <input name="founding" type="checkbox" className="mt-1" />
-            <span>Also interested in a founding / featured upgrade ({foundingPriceLabel()})</span>
+            <span>Also interested in founding / featured placement ({foundingPriceLabel()})</span>
           </label>
         </ActionForm>
         <FoundingCta source="claim" />
