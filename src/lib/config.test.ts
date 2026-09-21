@@ -89,7 +89,7 @@ test("homepage strip uses human hub names even if DB name is a slug", () => {
 });
 
 test("Vercel project alias redirects to belowgradepros.com and leaves unique previews alone", async () => {
-  const { default: nextConfig, vercelProjectAliasRedirects } = await import("../../next.config.ts");
+  const { default: nextConfig, vercelProjectAliasRedirects } = await import("../../next.config");
   assert.equal(vercelProjectAliasRedirects.length, 1);
   const rule = vercelProjectAliasRedirects[0];
   assert.equal(rule.source, "/:path*");
