@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { absoluteUrl, cityPath, PRODUCTION_SITE_URL, resolveSiteUrl, site } from "./config";
+import { buildHomepageStrip } from "./hubs";
 
 const ENV_KEYS = ["NEXT_PUBLIC_SITE_URL", "VERCEL_URL", "VERCEL_ENV"] as const;
 
@@ -76,4 +77,13 @@ test("city hub sitemap paths are bare /cities/{slug} with no service query", () 
 test("public site copy is evergreen", () => {
   assert.equal(site.email, "hello@belowgradepros.com");
   assert.doesNotMatch(site.description, /Wave 1|stubbed|this season|Stripe keys|WIP/i);
+});
+
+test("homepage strip uses human hub names even if DB name is a slug", () => {
+  const strip = buildHomepageStrip([
+    { slug: "tampa", name: "tampa", state: "fl", region: "gulf", listings: [] },
+    { slug: "dallas-fort-worth", name: "dallas-fort-worth", state: "tx", region: "north", listings: [] },
+  ]);
+  assert.equal(strip[0].name, "Tampa");
+  assert.equal(strip.find((city) => city.slug === "dallas-fort-worth")?.name, "Dallas–Fort Worth");
 });

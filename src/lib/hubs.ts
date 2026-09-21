@@ -458,7 +458,7 @@ export function buildHomepageStrip(cities: HomepageStripCity[]) {
     const city = bySlug.get(item.slug);
     return {
       ...item,
-      name: city?.name ?? hub?.name ?? item.slug,
+      name: hub?.name ?? city?.name ?? item.slug,
       state: city?.state ?? hub?.state ?? "",
       region: city?.region ?? hub?.region ?? "",
       heroImage: city?.heroImage ?? null,
