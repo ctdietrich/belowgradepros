@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { submitListing } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
@@ -9,6 +10,7 @@ import { foundingPriceLabel } from "@/lib/stripe";
 export const metadata: Metadata = {
   title: "Submit a listing",
   description: "Propose a foundation or encapsulation contractor for the BelowGradePros directory.",
+  alternates: { canonical: "/submit" },
 };
 
 const field =
@@ -18,11 +20,22 @@ export default function SubmitPage() {
   return (
     <main>
       <PageHero
-        kicker="Supply side"
+        kicker="Contractors"
         title="Submit a listing"
-        lede="Contractors can propose a profile. We review for fit — editorial, not paid placement — before anything is published. Founding / featured is an optional upgrade."
+        lede="Propose a profile for review. Listings are editorial — we publish for fit, not paid placement. Founding / featured is an optional upgrade."
       />
       <section className="mx-auto max-w-2xl space-y-8 px-5 py-12">
+        <p className="text-sm leading-7 text-slate-soft">
+          Already listed?{" "}
+          <Link href="/claim" className="text-amber-deep hover:underline">
+            Claim the existing profile
+          </Link>{" "}
+          instead. Questions:{" "}
+          <a className="text-amber-deep hover:underline" href={`mailto:${site.email}`}>
+            {site.email}
+          </a>
+          .
+        </p>
         <ActionForm action={submitListing} className="space-y-5" submitLabel="Send for review">
           <input type="hidden" name="type" value="contractor" />
           <label className="block text-sm">

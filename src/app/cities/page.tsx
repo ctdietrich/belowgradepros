@@ -7,9 +7,10 @@ import { getCities } from "@/lib/listings";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "City hubs",
+  title: "Cities we cover",
   description:
-    "Foundation repair and encapsulation contractors across Wave 1 metros — homepage strip plus catalog hubs including Memphis, Birmingham, Oklahoma City, Greenville SC, Raleigh, Tulsa, Charleston SC, and Florida encapsulation desks.",
+    "Browse BelowGradePros metro hubs for foundation repair and crawl-space / basement encapsulation contractors — Tampa, Houston, Atlanta, Charlotte, Jacksonville, Orlando, Nashville, Dallas–Fort Worth, and more.",
+  alternates: { canonical: "/cities" },
 };
 
 export default async function CitiesPage() {
@@ -18,9 +19,9 @@ export default async function CitiesPage() {
   return (
     <main>
       <PageHero
-        kicker="Wave 1"
-        title="City hubs"
-        lede="National directory, metros first. The homepage strip is Tampa, Houston, Atlanta, Charlotte, Jacksonville, Orlando, Nashville, then Dallas–Fort Worth. Later Wave 1 adds — including Florida encapsulation desks — stay on this index. Filter each hub with ?service=foundation-repair or ?service=encapsulation."
+        kicker="Coverage"
+        title="Cities we cover"
+        lede="National directory, metros first. Filter any hub by foundation repair or encapsulation. Additional markets — including Florida encapsulation coverage — stay on this index."
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

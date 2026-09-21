@@ -23,7 +23,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const listing = await getListingBySlug(slug);
-  if (!listing) return { title: "Listing" };
+  if (!listing) return { title: "Contractor" };
   return {
     title: listing.name,
     description: listing.tagline ?? listing.bio.slice(0, 160),
@@ -101,7 +101,7 @@ export default async function ListingPage({
           <p className="text-base leading-8 text-slate-soft">{listing.bio}</p>
           {badges.length ? (
             <div className="mt-8">
-              <h2 className="text-xs uppercase tracking-[0.2em] text-muted">Also</h2>
+              <h2 className="text-xs uppercase tracking-[0.2em] text-muted">Additional services</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {badges.map((item) => (
                   <span key={item} className="rounded-full bg-concrete-light px-3 py-1 text-sm">

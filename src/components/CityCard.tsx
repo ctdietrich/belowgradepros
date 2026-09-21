@@ -27,7 +27,7 @@ export function CityCard({
   const label = cta ? `${name} — ${cta}` : name;
 
   return (
-    <article className="group relative flex min-h-56 flex-col justify-end overflow-hidden rounded-2xl bg-slate">
+    <article className="group relative flex min-h-60 flex-col justify-end overflow-hidden rounded-2xl bg-slate shadow-sm ring-1 ring-slate/10">
       {heroImage ? (
         <Image
           src={heroImage}

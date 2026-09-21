@@ -72,3 +72,8 @@ test("city hub sitemap paths are bare /cities/{slug} with no service query", () 
   assert.equal(new URL(loc).search, "");
   assert.ok(cityPath("tampa", "encapsulation").includes("?service="));
 });
+
+test("public site copy is evergreen", () => {
+  assert.equal(site.email, "hello@belowgradepros.com");
+  assert.doesNotMatch(site.description, /Wave 1|stubbed|this season|Stripe keys|WIP/i);
+});

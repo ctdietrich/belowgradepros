@@ -69,5 +69,6 @@ export function organizationJsonLd() {
     url: site.url,
     description: site.description,
     slogan: site.brandTagline,
+    email: site.email,
   };
 }

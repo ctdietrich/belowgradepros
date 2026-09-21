@@ -357,7 +357,7 @@ export function isCatalogEncapHub(slug: string) {
 /** Homepage service chips — specialty-directory URLs only (no mold / waterproofing categories). */
 export const HOMEPAGE_SERVICE_CHIPS = [
   { label: "Encapsulation", href: "/cities/tampa?service=encapsulation" },
-  { label: "Foundation", href: "/cities/houston?service=foundation-repair" },
+  { label: "Foundation repair", href: "/cities/houston?service=foundation-repair" },
   { label: "Pier & beam", href: "/cities/dallas-fort-worth" },
 ] as const;
 

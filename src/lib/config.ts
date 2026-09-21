@@ -106,13 +106,14 @@ export const brand = {
 export const site = {
   name: "BelowGradePros",
   domain: "belowgradepros.com",
+  email: "hello@belowgradepros.com",
   get url() {
     return resolveSiteUrl();
   },
   tagline: brand.tagline,
   brandTagline: brand.tagline,
   description:
-    "A curated national directory of foundation repair and crawl-space / basement encapsulation contractors — Wave 1 metros first.",
+    "A specialty directory of foundation repair and crawl-space / basement encapsulation contractors. Browse by metro, compare licensed operators, and inquire directly.",
   listingTypes: [
     { key: "contractor" as const, label: "Contractor", plural: "Contractors", path: "/contractors" },
   ],

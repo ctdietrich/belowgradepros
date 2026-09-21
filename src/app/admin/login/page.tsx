@@ -15,12 +15,10 @@ export default async function AdminLoginPage({
 
   return (
     <main className="mx-auto max-w-md px-5 py-20">
-      <p className="text-xs uppercase tracking-[0.2em] text-amber-deep">Desk</p>
-      <h1 className="mt-2 font-display text-4xl text-slate">Admin</h1>
-      <p className="mt-3 text-sm text-muted">
-        Protected by <code>ADMIN_PASSWORD</code>.
-      </p>
-      <ActionForm action={loginAdmin} className="mt-8 space-y-4" submitLabel="Enter desk">
+      <p className="text-xs uppercase tracking-[0.2em] text-amber-deep">Staff</p>
+      <h1 className="mt-2 font-display text-4xl text-slate">Sign in</h1>
+      <p className="mt-3 text-sm text-muted">Directory administration.</p>
+      <ActionForm action={loginAdmin} className="mt-8 space-y-4" submitLabel="Sign in">
         <input type="hidden" name="next" value={next || "/admin"} />
         <label className="block text-sm">
           Password
