@@ -87,3 +87,20 @@ test("homepage strip uses human hub names even if DB name is a slug", () => {
   assert.equal(strip[0].name, "Tampa");
   assert.equal(strip.find((city) => city.slug === "dallas-fort-worth")?.name, "Dallas–Fort Worth");
 });
+
+test("Vercel project alias redirects to belowgradepros.com and leaves unique previews alone", async () => {
+  const { default: nextConfig, vercelProjectAliasRedirects } = await import("../../next.config.ts");
+  assert.equal(vercelProjectAliasRedirects.length, 1);
+  const rule = vercelProjectAliasRedirects[0];
+  assert.equal(rule.source, "/:path*");
+  assert.equal(rule.destination, "https://belowgradepros.com/:path*");
+  assert.equal(rule.permanent, true);
+  assert.deepEqual(rule.has, [{ type: "host", value: "belowgradepros.vercel.app" }]);
+  assert.ok(
+    !vercelProjectAliasRedirects.some((item) =>
+      item.has?.some((condition) => condition.value?.includes("*.vercel.app")),
+    ),
+  );
+  const fromConfig = await nextConfig.redirects?.();
+  assert.deepEqual(fromConfig, vercelProjectAliasRedirects);
+});
