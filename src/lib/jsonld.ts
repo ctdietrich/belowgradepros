@@ -8,6 +8,7 @@ import {
   site,
   typeLabel,
 } from "./config";
+import type { HubDensify } from "./hub-densify";
 import { listingBadges, publicContactEmail, type ListingWithCities } from "./listings";
 
 export function listingJsonLd(listing: ListingWithCities) {
@@ -70,5 +71,21 @@ export function organizationJsonLd() {
     description: site.description,
     slogan: site.brandTagline,
     email: site.email,
+  };
+}
+
+/** FAQPage JSON-LD for moisture densify hubs (unique metro Q&As). */
+export function hubDensifyFaqJsonLd(densify: HubDensify) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: densify.faqs.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
   };
 }

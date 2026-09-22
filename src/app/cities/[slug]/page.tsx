@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CityCard } from "@/components/CityCard";
 import { EmptyListings } from "@/components/EmptyListings";
+import { HubDensifySection } from "@/components/HubDensifySection";
 import { JsonLd } from "@/components/JsonLd";
 import { ListingCard } from "@/components/ListingCard";
 import { PageHero } from "@/components/PageHero";
@@ -11,16 +12,18 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
+import { getHubDensify } from "@/lib/hub-densify";
 import {
   buildCityIndex,
   catalogCardChips,
   catalogCardCta,
   catalogCardHref,
+  getWave1Hub,
   hubPageDescription,
   hubPageHeading,
   hubPageTitle,
 } from "@/lib/hubs";
-import { cityJsonLd } from "@/lib/jsonld";
+import { cityJsonLd, hubDensifyFaqJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
 
 export const dynamic = "force-dynamic";
@@ -62,12 +65,36 @@ export default async function CityDetailPage({
     citySlug: city.slug,
     service: serviceFilter ?? undefined,
   });
-  const others = buildCityIndex(await getCities()).filter((item) => item.slug !== city.slug);
+  const index = buildCityIndex(await getCities());
+  const densify = getHubDensify(city.slug);
+  const relatedFromDensify = densify
+    ? densify.related
+        .map((item) => {
+          const row = index.find((cityRow) => cityRow.slug === item.slug);
+          const hub = getWave1Hub(item.slug);
+          if (!row && !hub) return null;
+          return {
+            id: row?.id ?? `related:${item.slug}`,
+            slug: item.slug,
+            name: hub?.name ?? row?.name ?? item.slug,
+            state: row?.state ?? hub?.state ?? "",
+            region: row?.region ?? hub?.region ?? "",
+            heroImage: row?.heroImage ?? null,
+            count: row?.count ?? 0,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+    : [];
+  const others =
+    relatedFromDensify.length > 0
+      ? relatedFromDensify
+      : index.filter((item) => item.slug !== city.slug).slice(0, 3);
   const heading = hubPageHeading(city.slug, serviceFilter);
 
   return (
     <main>
       <JsonLd data={cityJsonLd({ ...city, description: hubPageDescription(city.slug, city.description) })} />
+      {densify ? <JsonLd data={hubDensifyFaqJsonLd(densify)} /> : null}
       <PageHero
         kicker={`${city.region} · ${city.state}`}
         title={heading}
@@ -117,9 +144,12 @@ export default async function CityDetailPage({
             />
           </div>
         )}
-        <h2 className="mt-16 font-display text-2xl text-slate">Other hubs</h2>
+        {densify ? <HubDensifySection densify={densify} /> : null}
+        <h2 className="mt-16 font-display text-2xl text-slate">
+          {densify ? "Related hubs" : "Other hubs"}
+        </h2>
         <div className="mt-6 grid gap-5 md:grid-cols-3">
-          {others.slice(0, 3).map((item) => (
+          {others.map((item) => (
             <CityCard
               key={item.id}
               slug={item.slug}
