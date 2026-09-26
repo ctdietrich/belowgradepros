@@ -11,7 +11,7 @@ import {
   type AdditionalServiceKey,
   type PrimaryServiceKey,
 } from "./config";
-import { isRejectListingStatus, normalizeListingStatus } from "./listing-status";
+import { normalizeListingStatus } from "./listing-status";
 
 export type ListingType = "contractor";
 
@@ -427,11 +427,13 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
   const licenseId = getField(row, LICENSE_KEYS) || null;
   const rawStatus = getField(row, STATUS_KEYS);
   const status = normalizeListingStatus(rawStatus, "draft");
-  const growthTokens = parseList(growthFlag).map((item) => item.trim().toLowerCase());
-  const growthClaimable = growthTokens.some((item) => item === "claimable" || item === "claim");
-  const claimable = isRejectListingStatus(rawStatus)
-    ? true
-    : growthClaimable || parseBoolean(getField(row, CLAIMABLE_KEYS), true);
+  // Ops uses claimable=no to mean "no email yet", not "already claimed".
+  // CSV never writes claimable=false. A real owner claim sets claimedAt.
+  const csvClaimable = getField(row, CLAIMABLE_KEYS);
+  if (csvClaimable && !parseBoolean(csvClaimable, true)) {
+    warnings.push(`Ignored claimable="${csvClaimable}" for "${name}"`);
+  }
+  const claimable = true;
 
   return {
     slug,
@@ -550,7 +552,6 @@ function listingFields(listing: MappedListing) {
     verified: listing.verified,
     status: listing.status,
     sourceUrl: listing.sourceUrl,
-    claimable: listing.claimable,
   };
 }
 
@@ -632,6 +633,7 @@ export async function importListingsFromCsv(
 
     const uniqueCityIds = [...new Set(cityIds)];
     if (existing) {
+      // Leave claimable untouched. CSV claimable=no is not an owner claim.
       await prisma!.listing.update({
         where: { id: existing.id },
         data: {
@@ -654,6 +656,7 @@ export async function importListingsFromCsv(
       await prisma!.listing.create({
         data: {
           ...listingFields(mapped),
+          claimable: true,
           slug,
           cities: {
             create: uniqueCityIds.map((cityId) => ({ cityId })),
