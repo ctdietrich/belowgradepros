@@ -58,8 +58,8 @@ Ops sheet (`directories/belowgradepros/research/listings/seed-candidates.csv`):
 | status | `status` | `status`, `publish_status` |
 | email | `contactEmail` | `email`, `contact_email`, `contact` (if it looks like an email) |
 | notes | `tagline` if no tagline; also bio fallback | `notes`, `note`, `internal_notes` |
-| growth_flag | `claimable` when value is `claimable` | `growth_flag`, `growth` |
-| claimable | `claimable` | `claimable`, `claim`, `can_claim` |
+| growth_flag | ignored (no schema column) | `growth_flag`, `growth` |
+| claimable | ignored on write; new rows stay claimable | `claimable`, `claim`, `can_claim` |
 | featured / verified | booleans | `featured` / `verified` |
 | tagline | `tagline` | `tagline`, `subtitle`, `headline` |
 | slug | `slug` | `slug`, `permalink` |
@@ -129,9 +129,9 @@ Missing hubs are **created** unless you pass `--no-create-cities`. Created rows 
 
 `contactEmail` is required on the model and stored as an empty string when the ops `email` column is blank or invalid. The importer never synthesizes `{slug}@example.com`. Public listing pages and JSON-LD omit mailto / email when the value is blank or ends with `@example.com`. **Do not invent operator emails for real businesses.** Sample CSV rows may still use `example.com` as fictional desk copy; those addresses are not shown on the public site.
 
-### growth_flag
+### claimable
 
-`growth_flag=claimable` (or `claim`) sets `claimable=true`. Other growth_flag tokens are ignored.
+CSV `claimable`, `claim`, and `can_claim` do not write `Listing.claimable`. Ops uses `claimable=no` to mean the sheet has no outreach email yet, not that an owner has claimed the profile. New rows always import with `claimable=true`. Updates leave the stored `claimable` value unchanged. A listing becomes non-claimable only when an owner claim is approved (`claimedAt`). `growth_flag` is accepted and discarded. A `claimable=no` cell is ignored and reported as an import warning.
 
 ## Flags
 

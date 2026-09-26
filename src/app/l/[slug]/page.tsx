@@ -173,15 +173,15 @@ export default async function ListingPage({
                 </div>
               ) : null}
             </dl>
-            {listing.claimable ? (
+            {listing.claimedAt ? (
+              <p className="mt-6 text-xs uppercase tracking-[0.16em] text-amber-deep">Claimed</p>
+            ) : (
               <Link
                 href={`/claim?listing=${listing.slug}`}
                 className="mt-6 inline-block text-sm text-slate hover:text-amber-deep"
               >
                 Claim this listing →
               </Link>
-            ) : (
-              <p className="mt-6 text-xs uppercase tracking-[0.16em] text-amber-deep">Claimed</p>
             )}
           </div>
           {listing.founding || listing.featured ? null : <FoundingCta compact source={`listing:${listing.slug}`} />}
