@@ -16,6 +16,7 @@ export const vercelProjectAliasRedirects = [
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  serverExternalPackages: ["nodemailer"],
   images: {
     remotePatterns: [
       {

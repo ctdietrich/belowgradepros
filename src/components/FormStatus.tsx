@@ -5,6 +5,15 @@ import type { ActionState } from "@/app/actions";
 
 type Action = (state: ActionState, formData: FormData) => Promise<ActionState>;
 
+function isSafeNextHref(href: string) {
+  if (href.startsWith("/") && !href.startsWith("//")) return true;
+  try {
+    return new URL(href).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function ActionForm({
   action,
   children,
@@ -33,9 +42,16 @@ export function ActionForm({
         </p>
       ) : null}
       {state?.ok && state.message ? (
-        <p className={variant === "concrete" ? "text-sm text-amber" : "text-sm text-amber-deep"}>
-          {state.message}
-        </p>
+        <div className="space-y-3">
+          <p className={variant === "concrete" ? "text-sm text-amber" : "text-sm text-amber-deep"}>
+            {state.message}
+          </p>
+          {state.nextHref && isSafeNextHref(state.nextHref) ? (
+            <a href={state.nextHref} className={`${buttonClass} inline-block text-center`}>
+              {state.nextLabel || "Continue"}
+            </a>
+          ) : null}
+        </div>
       ) : null}
       <button type="submit" disabled={pending} className={buttonClass}>
         {pending ? "Sending…" : submitLabel}

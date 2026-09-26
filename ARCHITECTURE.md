@@ -119,7 +119,7 @@ Applied in `src/app/globals.css`, `src/lib/config.ts`, and `src/components/Brand
 4. **Copy** — `src/app/page.tsx`, `src/app/about/page.tsx`.
 5. **SEO** — `src/lib/config.ts` (`resolveSiteUrl`), `src/lib/jsonld.ts`, `src/app/sitemap.ts` (bare `/cities/{slug}` only), `src/app/robots.ts`.
 6. **Admin** — already generic CRUD. Inbox tables follow submissions and claims.
-7. **Founding Stripe** — `src/lib/stripe.ts` + `/founding`. Point `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` at a live Payment Link when ready.
+7. **Founding Stripe** — `src/lib/stripe.ts` + `/founding`. Set `STRIPE_PAYMENT_LINK` (read per request). `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` is inlined at build and is only a fallback. `/founding?listing={slug}` attaches that slug to the Payment Link (`client_reference_id`) and to the founding submission. A founding claim links to the Payment Link, or to `/founding?listing={slug}` when no link is set.
 
 ## Request flow
 
@@ -138,11 +138,15 @@ Forms (submit, claim, founding, admin)
 
 ## Postgres (Vercel)
 
-The schema provider is `postgresql`. Local and production both use `DATABASE_URL`.
+The schema provider is `postgresql`. Runtime queries use `DATABASE_URL`. Migrations use `DIRECT_URL` (`directUrl`), falling back to `DATABASE_URL` when the CLI wrapper has no `DIRECT_URL`.
 
-1. Set `DATABASE_URL` and `ADMIN_PASSWORD` on Vercel. Set `NEXT_PUBLIC_SITE_URL=https://belowgradepros.com` on Production (required for SEO). Production never falls back to `VERCEL_URL` / `*.vercel.app`. Stripe vars are optional.
-2. Deploy. Build is `prisma generate && next build`. Data routes are `force-dynamic` so prerender does not query the database.
-3. Post-deploy: `npx prisma migrate deploy` (or `npm run db:deploy`). Then seed only if you want sample data.
+Prisma Postgres limits direct connections per role (`db.prisma.io`). That is the "too many connections for role" failure when serverless functions open the direct host. Application traffic uses the pooled host `pooled.db.prisma.io`. On Vercel, `src/lib/prisma.ts` rewrites a direct host to the pooled host, appends `connection_limit=1&pool_timeout=20` when missing (Prisma 6's default pool is `num_physical_cpus * 2 + 1`), and stores the client on `globalThis` in every environment. Migrate is unchanged and stays on the direct URL.
+
+1. Set `DATABASE_URL` (pooled, for Prisma Postgres) and `DIRECT_URL` (direct `db.prisma.io`) and `ADMIN_PASSWORD` on Vercel. Set `NEXT_PUBLIC_SITE_URL=https://belowgradepros.com` on Production (required for SEO). Production never falls back to `VERCEL_URL` / `*.vercel.app`. Stripe and lead-alert vars are optional (see README).
+2. Deploy. Build is `prisma generate && next build` (via `scripts/with-direct-url.mjs` so generate can see `DIRECT_URL`). Data routes are `force-dynamic` so prerender does not query the database.
+3. Post-deploy: `npm run db:deploy` (`prisma migrate deploy` against `DIRECT_URL`). Then seed only if you want sample data.
+
+Lead alerts (`src/lib/notify.ts`) run after the claim, listing, and founding inserts. `after()` from `next/server` sends them once the response is finished, with a 5s timeout. Resend when `RESEND_API_KEY` is set, otherwise SMTP when `SMTP_USER` and `SMTP_PASS` are set, otherwise a warning and no email. Failures stay out of the visitor's result.
 
 JSON columns (`photos`, `services`) map to `JSONB`.
 
@@ -163,6 +167,9 @@ prisma/seed.ts                Wave 1 hubs + sample listings (destructive; 8-card
 scripts/import-listings.ts    CLI wrapper around the shared importer
 src/lib/import-listings.ts    shared CSV parse + upsert (CLI + /admin/import)
 src/lib/stripe.ts             founding price + Payment Link helpers (no SDK)
+src/lib/notify.ts             lead alert email (Resend, SMTP, or no-op)
+src/lib/database-url.ts       Vercel pooled URL + connection_limit for PrismaClient
+src/lib/prisma.ts             PrismaClient singleton (all environments)
 src/app/admin/(console)/import  ADMIN_PASSWORD-gated CSV upload
 src/app/founding/page.tsx     founding CTA + stub checkout
 data/hero-seed.sample.csv     expected import columns
