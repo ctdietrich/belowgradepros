@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { submitClaim } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { getClaimableListings, resolveClaimableListing } from "@/lib/listings";
+import {
+  findListingByRef,
+  getClaimableListings,
+  getPublishedListingByRef,
+  missingPublishedClaimTarget,
+} from "@/lib/listings";
 import { foundingPriceLabel } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +31,12 @@ export default async function ClaimPage({
   searchParams: Promise<{ listing?: string }>;
 }) {
   const { listing: selected } = await searchParams;
-  const listings = await getClaimableListings();
   // Growth/ops deep links use slug: /claim?listing={slug}. Cuid id still works.
-  const preselected = await resolveClaimableListing(selected);
+  // A ref that is not a published listing is a real 404; bare /claim stays generic.
+  const published = selected?.trim() ? await getPublishedListingByRef(selected) : null;
+  if (missingPublishedClaimTarget(selected, published)) notFound();
+  const listings = await getClaimableListings();
+  const preselected = findListingByRef(listings, selected);
 
   return (
     <main>

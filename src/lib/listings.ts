@@ -136,10 +136,43 @@ export async function getClaimableListings() {
   });
 }
 
-/** Public deep link: `/claim?listing={slug}` (preferred) or `/claim?listing={id}`. Drafts never match. */
-export async function resolveClaimableListing(ref?: string | null) {
+/** Match a claim deep link (slug or Prisma id) against an already-loaded set. Blank refs match nothing. */
+export function findListingByRef<T extends { id: string; slug: string }>(
+  listings: readonly T[],
+  ref?: string | null,
+): T | null {
   const value = ref?.trim();
   if (!value) return null;
-  const listings = await getClaimableListings();
   return listings.find((item) => item.id === value || item.slug === value) ?? null;
+}
+
+/**
+ * `/claim` with no listing ref stays the generic form.
+ * A ref that does not match a published listing (slug or id) is a 404.
+ */
+export function missingPublishedClaimTarget(
+  ref: string | null | undefined,
+  publishedMatch: { id: string } | null | undefined,
+): boolean {
+  if (!ref?.trim()) return false;
+  return publishedMatch == null;
+}
+
+/** Published listing addressed by public slug or Prisma id. Drafts never match. */
+export async function getPublishedListingByRef(ref?: string | null) {
+  const value = ref?.trim();
+  if (!value) return null;
+  return prisma.listing.findFirst({
+    where: {
+      ...published,
+      OR: [{ id: value }, { slug: value }],
+    },
+    select: { id: true, slug: true, name: true, claimable: true },
+  });
+}
+
+/** Public deep link: `/claim?listing={slug}` (preferred) or `/claim?listing={id}`. Drafts never match. */
+export async function resolveClaimableListing(ref?: string | null) {
+  if (!ref?.trim()) return null;
+  return findListingByRef(await getClaimableListings(), ref);
 }
