@@ -45,10 +45,7 @@ export default async function FoundingPage({
             The paid path is an upgrade, not a pay-to-publish listing: founding / featured
             placement at {foundingPriceLabel()}. We follow up from {site.email} to activate it.
           </p>
-          <p className="mt-3">
-            Founding rate: {foundingPriceLabel()}, locked for life. Limited to the first 3
-            contractors per metro.
-          </p>
+          <p className="mt-3">{foundingPriceLabel()}, locked for founding members (first 10).</p>
           <p className="mt-3">
             Prefer to start from an existing profile?{" "}
             <Link href="/claim" className="text-amber-deep hover:underline">

@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 test("foundingPriceLabel is a single monthly rate", () => {
-  assert.equal(foundingPriceLabel(), "$199/mo");
+  assert.equal(foundingPriceLabel(), "$49/mo");
 });
 
 test("server STRIPE_PAYMENT_LINK is read ahead of the public build-time var", () => {

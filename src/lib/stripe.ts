@@ -1,9 +1,9 @@
 /**
- * Founding / featured listing path ($199/mo).
+ * Founding / featured listing path ($49/mo).
  * Stub-safe: build and preview do not require live Stripe keys.
  */
 
-export const FOUNDING_PRICE_LOW = 199;
+export const FOUNDING_PRICE_LOW = 49;
 
 function trimEnv(value?: string) {
   const trimmed = value?.trim();
