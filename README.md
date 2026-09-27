@@ -29,7 +29,7 @@ Brand lock: typographic wordmark **BelowGrade** (slate) + **Pros** (amber, heavi
 | `/l/[slug]` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
-| `/founding` | Founding / featured upgrade ($49/mo Stripe stub) |
+| `/founding` | Founding offer: free until the first lead, then $49/mo locked |
 | `/about` | What the product is (and is not) |
 | `/admin` | Password-gated CRUD (`ADMIN_PASSWORD`) |
 | `/admin/import` | Signed-in CSV upsert (same logic as `npm run import:listings`) |
@@ -66,8 +66,8 @@ Seed data uses **@example.com** addresses only and includes 20 published contrac
 | `DIRECT_URL` | Direct `db.prisma.io` URL for `prisma migrate deploy`. If unset, `npm run db:deploy` and `npm run build` fall back to `DATABASE_URL`. Set this whenever `DATABASE_URL` is the pooled host. |
 | `ADMIN_PASSWORD` | **Required** in production. Shared password for `/admin` |
 | `NEXT_PUBLIC_SITE_URL` | **Required for production SEO.** Canonical origin for metadataBase, canonical/OG URLs, `robots.txt` Sitemap, and sitemap `<loc>`s. Set to `https://belowgradepros.com` on Vercel Production. |
-| `STRIPE_PAYMENT_LINK` | Optional. Founding Payment Link, read on the server per request. Prefer this over the public var. |
-| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Same Payment Link, but **inlined at build time**. Changing it requires a redeploy, and it is used only when `STRIPE_PAYMENT_LINK` is empty. |
+| `STRIPE_PAYMENT_LINK` | Optional. Kept for later billing. Not used by `/founding` or `/claim`. |
+| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Build-time fallback for the same link. Not shown in the founding or claim flow. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional. Placeholder for a future Checkout session |
 | `STRIPE_SECRET_KEY` | Optional. Placeholder; not required to build |
 | `STRIPE_FOUNDING_PRICE_ID` | Optional. Placeholder for a future Checkout price |
@@ -79,7 +79,7 @@ Seed data uses **@example.com** addresses only and includes 20 published contrac
 | `SMTP_HOST` | Optional. Default `smtp.gmail.com`. |
 | `SMTP_PORT` | Optional. Default `465` (implicit TLS). |
 
-No Stripe npm package. No Beehiiv (or other newsletter) variables. Empty Stripe vars keep `/founding` on a follow-up form instead of Stripe checkout. With no Resend key and no SMTP user/password, lead rows are still saved and the email send is skipped.
+No Stripe npm package. No Beehiiv (or other newsletter) variables. `/founding` and `/claim` do not send visitors to Stripe. Stripe env vars stay for later billing. With no Resend key and no SMTP user/password, claim, submit, and quote rows are still saved and the email send is skipped.
 
 ## Deploy on Vercel
 
@@ -91,7 +91,7 @@ Set these project environment variables (Production, and Preview if you want tho
 | `DIRECT_URL` | Yes, if `DATABASE_URL` is pooled | Direct TCP for migrations: `postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require` (same user and password). `directUrl` in `prisma/schema.prisma`. If this is unset, `npm run db:deploy` falls back to `DATABASE_URL` — only safe while that value is still the direct host. |
 | `ADMIN_PASSWORD` | Yes | Shared `/admin` password |
 | `NEXT_PUBLIC_SITE_URL` | **Yes (Production SEO)** | `https://belowgradepros.com`. Set this on the Vercel **Production** environment (and Preview if you want previews to share the same canonical). Do **not** point it at a `*.vercel.app` deployment URL. If unset on Production, the app still uses `https://belowgradepros.com` and **never** `VERCEL_URL`. Preview deploys may fall back to `VERCEL_URL` only when this var is unset. |
-| `STRIPE_PAYMENT_LINK` | No | Server Payment Link, read per request on `/founding` and after a founding claim. Redeploy after setting it. |
+| `STRIPE_PAYMENT_LINK` | No | Kept for later billing. Not shown on `/founding` or `/claim`. |
 | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | No | Build-time fallback for the same link. Inlined, so a redeploy is required, and it is ignored when `STRIPE_PAYMENT_LINK` is set. |
 | `RESEND_API_KEY` | No | Lead alert email. Without this and without SMTP, alerts are skipped. |
 | `LEAD_ALERT_TO` | No | Defaults to `hello@belowgradepros.com`. |
@@ -156,7 +156,7 @@ npm run test:seo          # canonical URL + sitemap hub path checks
 
 ## Product boundaries
 
-- Stripe founding path is a **stub** ($49/mo Payment Link placeholder). Live Checkout is out of scope until keys exist.
+- Founding contractors are free until their first homeowner lead, then $49/mo locked. Exclusive leads, no per-lead fees, 3 founding spots per city. Stripe checkout is not in this flow.
 - No contractor auth beyond the claim inbox
 - No Beehiiv / newsletter product
 - No booking engine

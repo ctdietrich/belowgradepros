@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FoundingCta } from "@/components/FoundingCta";
+import { QuoteForm } from "@/components/QuoteForm";
 import { JsonLd } from "@/components/JsonLd";
 import {
   additionalServiceLabel,
@@ -122,6 +123,7 @@ export default async function ListingPage({
           ) : null}
         </article>
         <aside className="space-y-6">
+          <QuoteForm listingId={listing.id} />
           <div className="h-fit rounded-2xl border border-slate/10 bg-white p-6">
             <h2 className="font-display text-2xl text-slate">Inquire directly</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
@@ -184,7 +186,9 @@ export default async function ListingPage({
               </Link>
             )}
           </div>
-          {listing.founding || listing.featured ? null : <FoundingCta compact source={`listing:${listing.slug}`} />}
+          {listing.founding || listing.featured ? null : (
+            <FoundingCta compact listingSlug={listing.slug} source={`listing:${listing.slug}`} />
+          )}
         </aside>
       </section>
     </main>

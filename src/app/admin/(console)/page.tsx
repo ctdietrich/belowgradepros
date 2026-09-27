@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { updateInboxStatus } from "@/app/actions";
 import { listingPath, typeLabel } from "@/lib/config";
+import { quoteServiceLabel } from "@/lib/quote-lead";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "Admin" };
 
 export default async function AdminPage() {
-  const [listings, submissions, claims] = await Promise.all([
+  const [listings, submissions, claims, leads] = await Promise.all([
     prisma.listing.findMany({
       include: { cities: { include: { city: true } } },
       orderBy: [{ status: "asc" }, { name: "asc" }],
@@ -16,6 +17,11 @@ export default async function AdminPage() {
       include: { listing: true },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.lead.findMany({
+      include: { listing: { select: { name: true, slug: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   return (
@@ -23,7 +29,8 @@ export default async function AdminPage() {
       <header>
         <h1 className="font-display text-4xl text-slate">Directory desk</h1>
         <p className="mt-2 text-sm text-muted">
-          {listings.length} listings · {submissions.length} submissions · {claims.length} claims
+          {listings.length} listings · {submissions.length} submissions · {claims.length} claims ·{" "}
+          {leads.length} quote requests
         </p>
         <p className="mt-2 text-xs text-muted">
           Bulk hero CSV:{" "}
@@ -121,6 +128,36 @@ export default async function AdminPage() {
             body: item.message,
           }))}
         />
+      </section>
+
+      <section>
+        <h2 className="font-display text-2xl text-slate">Quote requests</h2>
+        <p className="mt-2 text-sm text-muted">Each row belongs to one listing and is not shared.</p>
+        <ul className="mt-4 space-y-3">
+          {leads.map((lead) => (
+            <li key={lead.id} className="rounded-2xl border border-slate/10 bg-white p-4 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium text-slate">
+                    {lead.name} · {quoteServiceLabel(lead.service)}
+                  </p>
+                  <p className="text-xs text-muted">
+                    <Link href={listingPath(lead.listing.slug)} className="hover:underline">
+                      {lead.listing.name}
+                    </Link>{" "}
+                    · {lead.listingSlug}
+                  </p>
+                </div>
+                <span className="text-xs text-muted">{lead.createdAt.toISOString()}</span>
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                {[lead.email, lead.phone, lead.zip].filter(Boolean).join(" · ")}
+              </p>
+              <p className="mt-2 leading-6 text-slate-soft">{lead.message}</p>
+            </li>
+          ))}
+          {!leads.length ? <li className="text-sm text-muted">No quote requests.</li> : null}
+        </ul>
       </section>
     </main>
   );

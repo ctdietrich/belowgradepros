@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { foundingPriceLabel } from "@/lib/stripe";
+import { foundingOfferCopy } from "@/lib/founding";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -63,8 +63,8 @@ export default function HowItWorksPage() {
               metros you actually cover, license where it applies. Free listings stay editorial.
             </li>
             <li>
-              <strong className="text-slate">3. Optional: founding placement.</strong> Featured
-              hub placement is {foundingPriceLabel()}. Request it on the claim/submit form or{" "}
+              <strong className="text-slate">3. Optional: founding placement.</strong>{" "}
+              {foundingOfferCopy()} Request it on the claim form or{" "}
               <Link href="/founding" className="text-amber-deep hover:underline">
                 start here
               </Link>

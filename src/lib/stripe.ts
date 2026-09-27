@@ -1,5 +1,6 @@
 /**
- * Founding / featured listing path ($49/mo).
+ * Later billing helpers. The public offer is free until the first lead,
+ * then $49/mo. These readers stay unused by /founding and /claim.
  * Stub-safe: build and preview do not require live Stripe keys.
  */
 

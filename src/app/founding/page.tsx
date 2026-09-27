@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { startFoundingCheckout } from "@/app/actions";
-import { ActionForm } from "@/components/FormStatus";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
+import { foundingAvailability, foundingOfferCopy, foundingSpotsFullMessage } from "@/lib/founding";
 import { getPublishedListingByRef, missingPublishedClaimTarget } from "@/lib/listings";
-import { foundingCheckoutUrl, foundingPriceLabel } from "@/lib/stripe";
+
+const offer = foundingOfferCopy();
 
 export const metadata: Metadata = {
   title: "Founding listing",
-  description: `Featured and founding contractor listings on BelowGradePros — ${foundingPriceLabel()}. Free directory profiles; paid placement on city hubs.`,
+  description: offer,
+  openGraph: {
+    title: "Founding listing",
+    description: offer,
+  },
   alternates: { canonical: "/founding" },
 };
 
-const field =
-  "mt-1 w-full rounded-lg border border-slate/15 bg-white px-3 py-2 outline-none focus:border-amber";
-
-// Payment Link is read per request (STRIPE_PAYMENT_LINK). Do not statically cache it.
 export const dynamic = "force-dynamic";
 
 export default async function FoundingPage({
@@ -30,69 +30,52 @@ export default async function FoundingPage({
   // A ref that is not a published listing is a real 404; bare /founding stays generic.
   const listing = listingRef?.trim() ? await getPublishedListingByRef(listingRef) : null;
   if (missingPublishedClaimTarget(listingRef, listing)) notFound();
-  const link = foundingCheckoutUrl({ slug: listing?.slug });
+  const availability = listing
+    ? await foundingAvailability(listing.cities.map((item) => item.city))
+    : null;
+  const claimHref = listing ? `/claim?listing=${encodeURIComponent(listing.slug)}` : "/claim";
 
   return (
     <main>
-      <PageHero
-        kicker="Founding / featured"
-        title={`Stand out on the city hub. ${foundingPriceLabel()}.`}
-        lede="Directory listings stay editorial and free to submit or claim. Founding contractors receive featured placement on metro hubs so homeowners see you first."
-      />
+      <PageHero kicker="Founding contractors" title="Free until your first lead." lede={offer} />
       <section className="mx-auto grid max-w-3xl gap-8 px-5 py-12">
         <div className="rounded-2xl border border-slate/10 bg-white p-6 text-sm leading-7 text-slate-soft shadow-sm">
-          <p>
-            The paid path is an upgrade, not a pay-to-publish listing: founding / featured
-            placement at {foundingPriceLabel()}. We follow up from {site.email} to activate it.
-          </p>
-          <p className="mt-3">{foundingPriceLabel()}, locked for founding members (first 10).</p>
+          <p>{offer}</p>
           <p className="mt-3">
-            Prefer to start from an existing profile?{" "}
-            <Link href="/claim" className="text-amber-deep hover:underline">
-              Claim a listing
-            </Link>{" "}
-            or{" "}
-            <Link href="/submit" className="text-amber-deep hover:underline">
-              submit a new one
-            </Link>{" "}
-            and check the founding option.
+            Founding placement is requested with a claim. We review it before the listing is marked
+            founding. Questions:{" "}
+            <a className="text-amber-deep hover:underline" href={`mailto:${site.email}`}>
+              {site.email}
+            </a>
+            .
           </p>
         </div>
         {listing ? (
-          <p className="rounded-2xl border border-amber/40 bg-white px-5 py-4 text-sm leading-6 text-slate">
-            This founding upgrade is for <span className="font-medium">{listing.name}</span>
-            <span className="text-slate-soft"> · {listing.slug}</span>.
-          </p>
-        ) : null}
-        {link ? (
-          <a
-            href={link}
-            className="inline-block w-fit rounded-full bg-slate px-5 py-2.5 text-sm text-page hover:bg-slate-soft"
-          >
-            Continue to payment
-          </a>
-        ) : (
-          <ActionForm
-            action={startFoundingCheckout}
-            className="space-y-4"
-            submitLabel="Request featured placement"
-          >
-            {listing ? <input type="hidden" name="listing" value={listing.slug} /> : null}
-            <label className="block text-sm">
-              Work email
-              <input
-                name="email"
-                type="email"
-                required
-                className={field}
-                placeholder={site.email}
-              />
-            </label>
-            <p className="text-sm leading-6 text-slate-soft">
-              We will write back from {site.email} to activate featured placement
-              {listing ? ` for ${listing.name}` : ""}. You can also email us directly.
+          <div className="rounded-2xl border border-amber/40 bg-white px-5 py-4 text-sm leading-6 text-slate">
+            <p>
+              This offer is for <span className="font-medium">{listing.name}</span>
+              <span className="text-slate-soft"> · {listing.slug}</span>.
             </p>
-          </ActionForm>
+            {availability && !availability.spotsOpen && availability.fullCityName ? (
+              <p className="mt-3">{foundingSpotsFullMessage(availability.fullCityName)}</p>
+            ) : null}
+            <p className="mt-3">
+              <Link href={claimHref} className="text-amber-deep hover:underline">
+                {availability && !availability.spotsOpen
+                  ? "Continue with a standard claim"
+                  : "Claim this listing"}
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <p>
+            <Link
+              href="/claim"
+              className="inline-block rounded-full bg-slate px-5 py-2.5 text-sm text-page hover:bg-slate-soft"
+            >
+              Claim a listing
+            </Link>
+          </p>
         )}
       </section>
     </main>

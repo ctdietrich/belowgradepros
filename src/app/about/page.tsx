@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { foundingPriceLabel } from "@/lib/stripe";
+import { foundingOfferCopy } from "@/lib/founding";
 
 export const metadata: Metadata = {
   title: "About",
@@ -39,8 +39,7 @@ export default function AboutPage() {
             <h2 className="font-display text-2xl text-slate">What we do not do</h2>
             <p className="mt-3 text-sm leading-7">
               No booking engine. No lead auction. No contractor login beyond a claim request.
-              Directory profiles are free; founding listings ({foundingPriceLabel()}) are an
-              optional upgrade for featured placement.
+              Directory profiles are free. {foundingOfferCopy()}
             </p>
           </div>
         </div>

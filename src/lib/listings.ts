@@ -167,7 +167,13 @@ export async function getPublishedListingByRef(ref?: string | null) {
       ...published,
       OR: [{ id: value }, { slug: value }],
     },
-    select: { id: true, slug: true, name: true, claimable: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      claimable: true,
+      cities: { select: { city: { select: { slug: true, name: true } } } },
+    },
   });
 }
 

@@ -22,6 +22,7 @@ function listing(email: string): ListingWithCities {
     services: [],
     featured: false,
     founding: false,
+    foundingAt: null,
     verified: false,
     status: "published",
     sourceUrl: null,
