@@ -18,11 +18,12 @@ import {
   type AdditionalServiceKey,
 } from "@/lib/config";
 import { foundingAvailability, foundingOfferCopy, foundingSpotsFullMessage } from "@/lib/founding";
-import { notifyLead, type LeadAlertInput } from "@/lib/notify";
+import { leadAlertProvider, notifyLead, type LeadAlertInput } from "@/lib/notify";
 import {
   QUOTE_RATE_WINDOW_MS,
   quoteServiceLabel,
   quoteSubmissionRateLimited,
+  saveQuoteThenNotify,
   validateQuoteLead,
 } from "@/lib/quote-lead";
 import {
@@ -263,34 +264,47 @@ export async function requestQuote(
     };
   }
 
-  await prisma.lead.create({
-    data: {
-      listingId: listing.id,
-      listingSlug: listing.slug,
-      name: parsed.value.name,
-      email: parsed.value.email,
-      phone: parsed.value.phone,
-      zip: parsed.value.zip,
-      service: parsed.value.service,
-      message: parsed.value.message,
-    },
+  await saveQuoteThenNotify({
+    provider: leadAlertProvider(),
+    save: () =>
+      prisma.lead.create({
+        data: {
+          listingId: listing.id,
+          listingSlug: listing.slug,
+          name: parsed.value.name,
+          email: parsed.value.email,
+          phone: parsed.value.phone,
+          zip: parsed.value.zip,
+          service: parsed.value.service,
+          message: parsed.value.message,
+        },
+      }),
+    notify: () =>
+      scheduleLeadAlert({
+        action: "requestQuote",
+        listingName: listing.name,
+        listingSlug: listing.slug,
+        contactName: parsed.value.name,
+        email: parsed.value.email,
+        note: [
+          `Service: ${quoteServiceLabel(parsed.value.service)}`,
+          `Phone: ${parsed.value.phone ?? "—"}`,
+          `ZIP: ${parsed.value.zip}`,
+          parsed.value.message,
+        ].join("\n"),
+        adminPath: "/admin/leads",
+      }),
   });
 
-  revalidatePath("/admin");
-  await scheduleLeadAlert({
-    action: "requestQuote",
-    listingName: listing.name,
-    listingSlug: listing.slug,
-    contactName: parsed.value.name,
-    email: parsed.value.email,
-    note: [
-      `Service: ${quoteServiceLabel(parsed.value.service)}`,
-      `Phone: ${parsed.value.phone ?? "—"}`,
-      `ZIP: ${parsed.value.zip}`,
-      parsed.value.message,
-    ].join("\n"),
-    adminPath: "/admin",
-  });
+  try {
+    revalidatePath("/admin");
+    revalidatePath("/admin/leads");
+  } catch (error) {
+    console.error(
+      "[quote] lead saved; revalidate failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 
   return { ok: true, message: thanks };
 }

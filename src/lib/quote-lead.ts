@@ -91,3 +91,45 @@ export function validateQuoteLead(input: QuoteLeadInput): QuoteLeadValidation {
 export function quoteSubmissionRateLimited(recentCount: number) {
   return recentCount >= QUOTE_RATE_LIMIT;
 }
+
+const chicagoTimestamp = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZoneName: "short",
+});
+
+/** Admin lead table clock. January is CST; daylight time is CDT. */
+export function formatLeadTimestampChicago(date: Date) {
+  return chicagoTimestamp.format(date);
+}
+
+/**
+ * Persist the quote, then email only when a provider is configured.
+ * A missing provider skips notify. A notify throw is logged and swallowed.
+ */
+export async function saveQuoteThenNotify<T>(options: {
+  save: () => Promise<T>;
+  provider: "resend" | "smtp" | "none";
+  notify: () => Promise<unknown>;
+  onNotifyError?: (error: unknown) => void;
+}): Promise<T> {
+  const saved = await options.save();
+  if (options.provider === "none") return saved;
+  try {
+    await options.notify();
+  } catch (error) {
+    if (options.onNotifyError) {
+      options.onNotifyError(error);
+    } else {
+      console.error(
+        "[quote] lead saved; notification failed:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+  return saved;
+}

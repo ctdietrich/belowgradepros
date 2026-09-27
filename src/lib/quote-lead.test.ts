@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   QUOTE_RATE_LIMIT,
+  formatLeadTimestampChicago,
   quoteSubmissionRateLimited,
+  saveQuoteThenNotify,
   validateQuoteLead,
 } from "./quote-lead";
 
@@ -58,4 +60,51 @@ test("quote rate limit trips at three recent requests", () => {
   assert.equal(quoteSubmissionRateLimited(0), false);
   assert.equal(quoteSubmissionRateLimited(2), false);
   assert.equal(quoteSubmissionRateLimited(3), true);
+});
+
+test("quote saves the lead when email is not configured and does not notify", async () => {
+  const order: string[] = [];
+  const saved = await saveQuoteThenNotify({
+    provider: "none",
+    save: async () => {
+      order.push("save");
+      return { id: "lead_1" };
+    },
+    notify: async () => {
+      order.push("notify");
+      throw new Error("email provider unavailable");
+    },
+  });
+  assert.deepEqual(saved, { id: "lead_1" });
+  assert.deepEqual(order, ["save"]);
+});
+
+test("quote saves before notify, and a notify failure stays off the result", async () => {
+  const order: string[] = [];
+  const logged: string[] = [];
+  const saved = await saveQuoteThenNotify({
+    provider: "resend",
+    save: async () => {
+      order.push("save");
+      return { id: "lead_2" };
+    },
+    notify: async () => {
+      order.push("notify");
+      throw new Error("resend down");
+    },
+    onNotifyError: (error) => logged.push(error instanceof Error ? error.message : String(error)),
+  });
+  assert.deepEqual(order, ["save", "notify"]);
+  assert.deepEqual(saved, { id: "lead_2" });
+  assert.deepEqual(logged, ["resend down"]);
+});
+
+test("lead timestamps render in America/Chicago", () => {
+  const label = formatLeadTimestampChicago(new Date("2026-01-15T18:30:00.000Z"));
+  assert.match(label, /Jan/);
+  assert.match(label, /15/);
+  assert.match(label, /2026/);
+  assert.match(label, /12:30/);
+  assert.match(label, /PM/);
+  assert.match(label, /CST/);
 });

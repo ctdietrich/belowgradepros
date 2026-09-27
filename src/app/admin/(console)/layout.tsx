@@ -25,6 +25,9 @@ export default async function AdminConsoleLayout({
           <Link href="/admin/listings/new" className="text-slate-soft hover:text-slate">
             New listing
           </Link>
+          <Link href="/admin/leads" className="text-slate-soft hover:text-slate">
+            Leads
+          </Link>
           <Link href="/admin/import" className="text-slate-soft hover:text-slate">
             Import CSV
           </Link>
