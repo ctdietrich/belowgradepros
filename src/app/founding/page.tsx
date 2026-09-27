@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { startFoundingCheckout } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { getListingBySlug } from "@/lib/listings";
+import { getPublishedListingByRef, missingPublishedClaimTarget } from "@/lib/listings";
 import { foundingCheckoutUrl, foundingPriceLabel } from "@/lib/stripe";
 
 export const metadata: Metadata = {
@@ -25,8 +26,10 @@ export default async function FoundingPage({
   searchParams: Promise<{ from?: string; listing?: string }>;
 }) {
   const { listing: listingRef } = await searchParams;
-  const requested = listingRef?.trim();
-  const listing = requested ? await getListingBySlug(requested) : null;
+  // Deep links use slug: /founding?listing={slug}. Cuid id still works.
+  // A ref that is not a published listing is a real 404; bare /founding stays generic.
+  const listing = listingRef?.trim() ? await getPublishedListingByRef(listingRef) : null;
+  if (missingPublishedClaimTarget(listingRef, listing)) notFound();
   const link = foundingCheckoutUrl({ slug: listing?.slug });
 
   return (
@@ -41,6 +44,10 @@ export default async function FoundingPage({
           <p>
             The paid path is an upgrade, not a pay-to-publish listing: founding / featured
             placement at {foundingPriceLabel()}. We follow up from {site.email} to activate it.
+          </p>
+          <p className="mt-3">
+            Founding rate: {foundingPriceLabel()}, locked for life. Limited to the first 3
+            contractors per metro.
           </p>
           <p className="mt-3">
             Prefer to start from an existing profile?{" "}
