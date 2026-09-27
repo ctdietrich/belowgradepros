@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl, cityPath, listingPath } from "@/lib/config";
+import { publicGuidePaths } from "@/lib/cost-paths";
 import { WAVE1_HUB_SLUGS } from "@/lib/hubs";
 import { publishedListingWhere } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
@@ -28,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/about",
     "/how-it-works",
     "/contact",
+    ...publicGuidePaths(),
   ].map((path) => ({
     url: absoluteUrl(path),
     lastModified: new Date(),

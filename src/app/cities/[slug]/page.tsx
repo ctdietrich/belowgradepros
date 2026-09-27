@@ -12,6 +12,7 @@ import {
   normalizeHubServiceQuery,
   site,
 } from "@/lib/config";
+import { encapsulationCostPath, foundationCostPath, isCostMetro } from "@/lib/cost-paths";
 import { getHubDensify } from "@/lib/hub-densify";
 import {
   buildCityIndex,
@@ -126,6 +127,20 @@ export default async function CityDetailPage({
               </Link>
             ))}
         </div>
+        {isCostMetro(city.slug) ? (
+          <p className="mt-6 text-sm text-slate-soft">
+            <span className="font-medium text-slate">
+              What does it cost in {getWave1Hub(city.slug)?.name ?? city.name}?
+            </span>{" "}
+            <Link href={encapsulationCostPath(city.slug)} className="text-amber-deep hover:underline">
+              Crawl space encapsulation
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link href={foundationCostPath(city.slug)} className="text-amber-deep hover:underline">
+              Foundation repair
+            </Link>
+          </p>
+        ) : null}
         <h2 className="mt-8 font-display text-3xl text-slate">Contractors</h2>
         {listings.length ? (
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
