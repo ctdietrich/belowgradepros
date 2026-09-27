@@ -7,11 +7,11 @@ BelowGradePros is a **vertical directory** cloned from [FishTheFlats](https://gi
 ```
 Demand  →  browse city hubs / primary services  →  inquire on the listing
 Supply  →  submit or claim  →  editorial review in /admin  →  published listing
-Paid    →  founding / featured upgrade ($199–299/mo Stripe stub)
+Paid    →  founding: free until the first real homeowner lead, then $49/mo locked (3 spots per city)
 Ops     →  password-gated CRUD + CSV import
 ```
 
-There is no availability engine. Checkout is a Payment Link / notify stub until Stripe keys exist. The product is the catalog and the desk.
+There is no availability engine. Founding is free until we send the first real homeowner lead, then $49/mo locked. Stripe helpers stay in the repo for later billing and are not shown on `/founding` or `/claim`. The product is the catalog and the desk.
 
 ## Stack map
 
@@ -119,7 +119,7 @@ Applied in `src/app/globals.css`, `src/lib/config.ts`, and `src/components/Brand
 4. **Copy** — `src/app/page.tsx`, `src/app/about/page.tsx`.
 5. **SEO** — `src/lib/config.ts` (`resolveSiteUrl`), `src/lib/jsonld.ts`, `src/app/sitemap.ts` (bare `/cities/{slug}` only), `src/app/robots.ts`.
 6. **Admin** — already generic CRUD. Inbox tables follow submissions and claims.
-7. **Founding Stripe** — `src/lib/stripe.ts` + `/founding`. Set `STRIPE_PAYMENT_LINK` (read per request). `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` is inlined at build and is only a fallback. `/founding?listing={slug}` attaches that slug to the Payment Link (`client_reference_id`) and to the founding submission. A founding claim links to the Payment Link, or to `/founding?listing={slug}` when no link is set.
+7. **Founding** — `src/lib/founding.ts` and `/founding`. Three published founding listings per city. A claim that opts in stores `ClaimRequest.founding`; admin “Mark reviewed” sets `Listing.founding` and `foundingAt` when a spot is open. `/founding?listing={slug}` explains the offer and links to `/claim?listing={slug}`. `src/lib/stripe.ts` still reads Payment Link env vars for later billing.
 
 ## Request flow
 
@@ -130,7 +130,7 @@ Public pages (RSC)
 
 Forms (submit, claim, founding, admin)
   → src/app/actions.ts (server actions)
-  → Prisma (or Payment Link redirect)
+  → Prisma (quote, claim, submit)
   → revalidatePath / redirect
 ```
 
@@ -146,13 +146,13 @@ Prisma Postgres limits direct connections per role (`db.prisma.io`). That is the
 2. Deploy. Build is `prisma generate && next build` (via `scripts/with-direct-url.mjs` so generate can see `DIRECT_URL`). Data routes are `force-dynamic` so prerender does not query the database.
 3. Post-deploy: `npm run db:deploy` (`prisma migrate deploy` against `DIRECT_URL`). Then seed only if you want sample data.
 
-Lead alerts (`src/lib/notify.ts`) run after the claim, listing, and founding inserts. `after()` from `next/server` sends them once the response is finished, with a 5s timeout. Resend when `RESEND_API_KEY` is set, otherwise SMTP when `SMTP_USER` and `SMTP_PASS` are set, otherwise a warning and no email. Failures stay out of the visitor's result.
+Lead alerts (`src/lib/notify.ts`) run after claim, listing, and homeowner quote inserts. `after()` from `next/server` sends them once the response is finished, with a 5s timeout. Resend when `RESEND_API_KEY` is set, otherwise SMTP when `SMTP_USER` and `SMTP_PASS` are set, otherwise a warning and no email. Failures stay out of the visitor's result. A quote is stored on that listing only.
 
 JSON columns (`photos`, `services`) map to `JSONB`.
 
 ## Intentionally out of scope (v1)
 
-- Live Stripe Checkout (keys + SDK). The stub and Payment Link placeholder are in.
+- Live Stripe Checkout (keys + SDK). `src/lib/stripe.ts` still reads Payment Link env vars for later billing.
 - Real contractor auth beyond the claim inbox
 - Beehiiv / newsletter product
 - Vercel project creation / DNS (document env only)
@@ -166,12 +166,14 @@ prisma/schema.prisma          models
 prisma/seed.ts                Wave 1 hubs + sample listings (destructive; 8-card homepage strip is config, not seed order)
 scripts/import-listings.ts    CLI wrapper around the shared importer
 src/lib/import-listings.ts    shared CSV parse + upsert (CLI + /admin/import)
-src/lib/stripe.ts             founding price + Payment Link helpers (no SDK)
+src/lib/founding.ts           founding offer copy + spots left per city
+src/lib/quote-lead.ts         homeowner quote validation
+src/lib/stripe.ts             post-first-lead price + Payment Link helpers (no SDK)
 src/lib/notify.ts             lead alert email (Resend, SMTP, or no-op)
 src/lib/database-url.ts       Vercel pooled URL + connection_limit for PrismaClient
 src/lib/prisma.ts             PrismaClient singleton (all environments)
 src/app/admin/(console)/import  ADMIN_PASSWORD-gated CSV upload
-src/app/founding/page.tsx     founding CTA + stub checkout
+src/app/founding/page.tsx     founding offer; links to /claim
 data/hero-seed.sample.csv     expected import columns
 docs/import-listings.md       column aliases + production runbook
 src/lib/hubs.ts               Wave 1 slugs, hub titles/meta

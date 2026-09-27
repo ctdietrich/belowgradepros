@@ -6,9 +6,11 @@ export type QuoteCtaProps = {
   service: QuoteService;
   source?: string;
   label: string;
-  microcopy?: string;
   appearance?: "on-dark" | "on-light" | "prominent";
 };
+
+/** City-level line. Cost pages and the moisture checklist stay on /contact. */
+export const QUOTE_CTA_MICROCOPY = "Request a free quote. No obligation.";
 
 function quoteHref({ citySlug, service, source }: Pick<QuoteCtaProps, "citySlug" | "service" | "source">) {
   const params = new URLSearchParams();
@@ -18,17 +20,11 @@ function quoteHref({ citySlug, service, source }: Pick<QuoteCtaProps, "citySlug"
   return `/contact?${params.toString()}`;
 }
 
-/**
- * Placeholder until the Site Engineer homeowner quote form lands.
- * TODO: one-line swap —
- * return <QuoteForm citySlug={citySlug} service={service} source={source} />;
- */
 export function QuoteCta({
   citySlug,
   service,
   source,
   label,
-  microcopy,
   appearance = "on-light",
 }: QuoteCtaProps) {
   const href = quoteHref({ citySlug, service, source });
@@ -45,9 +41,7 @@ export function QuoteCta({
       <Link href={href} className={buttonClass}>
         {label}
       </Link>
-      {microcopy ? (
-        <p className={`mt-2 text-sm ${onDark ? "text-concrete/80" : "text-muted"}`}>{microcopy}</p>
-      ) : null}
+      <p className={`mt-2 text-sm ${onDark ? "text-concrete/80" : "text-muted"}`}>{QUOTE_CTA_MICROCOPY}</p>
     </div>
   );
 }

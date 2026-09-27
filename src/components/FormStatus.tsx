@@ -20,14 +20,17 @@ export function ActionForm({
   className,
   submitLabel = "Submit",
   variant = "slate",
+  hideFormOnSuccess = false,
 }: {
   action: Action;
   children: ReactNode;
   className?: string;
   submitLabel?: string;
   variant?: "slate" | "concrete";
+  hideFormOnSuccess?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const done = Boolean(hideFormOnSuccess && state?.ok && state.message);
   const buttonClass =
     variant === "concrete"
       ? "rounded-full bg-concrete px-5 py-2.5 text-sm text-slate-deep hover:bg-white disabled:opacity-60"
@@ -35,7 +38,7 @@ export function ActionForm({
 
   return (
     <form action={formAction} className={className}>
-      {children}
+      {done ? null : children}
       {state?.error ? (
         <p className={variant === "concrete" ? "text-sm text-concrete" : "text-sm text-red-700"}>
           {state.error}
@@ -53,9 +56,11 @@ export function ActionForm({
           ) : null}
         </div>
       ) : null}
-      <button type="submit" disabled={pending} className={buttonClass}>
-        {pending ? "Sending…" : submitLabel}
-      </button>
+      {done ? null : (
+        <button type="submit" disabled={pending} className={buttonClass}>
+          {pending ? "Sending…" : submitLabel}
+        </button>
+      )}
     </form>
   );
 }

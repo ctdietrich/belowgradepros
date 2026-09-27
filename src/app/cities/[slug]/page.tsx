@@ -13,6 +13,7 @@ import {
   site,
 } from "@/lib/config";
 import { encapsulationCostPath, foundationCostPath, isCostMetro } from "@/lib/cost-paths";
+import { foundingSpotsLabel, foundingSpotsLeft } from "@/lib/founding";
 import { getHubDensify } from "@/lib/hub-densify";
 import {
   buildCityIndex,
@@ -91,6 +92,7 @@ export default async function CityDetailPage({
       ? relatedFromDensify
       : index.filter((item) => item.slug !== city.slug).slice(0, 3);
   const heading = hubPageHeading(city.slug, serviceFilter);
+  const spotsLeft = await foundingSpotsLeft(city.slug);
 
   return (
     <main>
@@ -102,6 +104,11 @@ export default async function CityDetailPage({
         lede={hubPageDescription(city.slug, city.description)}
       />
       <section className="mx-auto max-w-6xl px-5 py-12">
+        <p className="mb-6 text-sm">
+          <Link href="/founding" className="font-medium text-amber-deep hover:underline">
+            {foundingSpotsLabel(spotsLeft)}
+          </Link>
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={cityPath(city.slug)}

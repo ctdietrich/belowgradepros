@@ -5,7 +5,7 @@ import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { foundingPriceLabel } from "@/lib/stripe";
+import { foundingOfferCopy } from "@/lib/founding";
 
 export const metadata: Metadata = {
   title: "Submit a listing",
@@ -81,7 +81,7 @@ export default function SubmitPage() {
           </fieldset>
           <label className="flex items-start gap-2 text-sm">
             <input name="founding" type="checkbox" className="mt-1" />
-            <span>I want a founding / featured listing ({foundingPriceLabel()})</span>
+            <span>{foundingOfferCopy()}</span>
           </label>
           <label className="block text-sm">
             Bio

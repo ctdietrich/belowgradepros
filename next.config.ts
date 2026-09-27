@@ -14,6 +14,14 @@ export const vercelProjectAliasRedirects = [
   },
 ];
 
+/** `/badge/:slug.svg` is the embed URL. The handler lives off that path so the HTML page can use `/badge/:slug`. */
+export const foundingBadgeRewrites = [
+  {
+    source: "/badge/:slug.svg",
+    destination: "/badge/svg/:slug",
+  },
+];
+
 const nextConfig: NextConfig = {
   agentRules: false,
   serverExternalPackages: ["nodemailer"],
@@ -27,6 +35,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return vercelProjectAliasRedirects;
+  },
+  async rewrites() {
+    return foundingBadgeRewrites;
   },
 };
 

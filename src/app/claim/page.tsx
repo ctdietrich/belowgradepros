@@ -5,20 +5,25 @@ import { ActionForm } from "@/components/FormStatus";
 import { FoundingCta } from "@/components/FoundingCta";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
+import { foundingAvailability, foundingOfferCopy, foundingSpotsFullMessage } from "@/lib/founding";
 import {
   findListingByRef,
   getClaimableListings,
   getPublishedListingByRef,
   missingPublishedClaimTarget,
 } from "@/lib/listings";
-import { foundingPriceLabel } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
+const offer = foundingOfferCopy();
+
 export const metadata: Metadata = {
   title: "Claim a listing",
-  description:
-    "Claim your BelowGradePros contractor profile. Some listings were compiled from public sources so homeowners can find specialists — we transfer them to the company they describe.",
+  description: offer,
+  openGraph: {
+    title: "Claim a listing",
+    description: offer,
+  },
   alternates: { canonical: "/claim" },
 };
 
@@ -37,6 +42,10 @@ export default async function ClaimPage({
   if (missingPublishedClaimTarget(selected, published)) notFound();
   const listings = await getClaimableListings();
   const preselected = findListingByRef(listings, selected);
+  const availability = published
+    ? await foundingAvailability(published.cities.map((item) => item.city))
+    : null;
+  const spotsOpen = availability?.spotsOpen ?? true;
 
   return (
     <main>
@@ -46,6 +55,10 @@ export default async function ClaimPage({
         lede="Some profiles were compiled from public materials so homeowners can find specialists in their metro. If this is your company, tell us who you are and we will transfer the listing to you."
       />
       <section className="mx-auto max-w-2xl space-y-8 px-5 py-12">
+        <p className="text-sm leading-7 text-slate-soft">{offer}</p>
+        {availability && !spotsOpen && availability.fullCityName ? (
+          <p className="text-sm leading-7 text-slate">{foundingSpotsFullMessage(availability.fullCityName)}</p>
+        ) : null}
         <p className="text-sm leading-7 text-slate-soft">
           We review claim requests before changing a public profile. Questions in the meantime:{" "}
           <a className="text-amber-deep hover:underline" href={`mailto:${site.email}`}>
@@ -92,10 +105,16 @@ export default async function ClaimPage({
               placeholder="Owner, manager, or authorized representative — a sentence is enough."
             />
           </label>
-          <label className="flex items-start gap-2 text-sm">
-            <input name="founding" type="checkbox" className="mt-1" />
-            <span>Also interested in founding / featured placement ({foundingPriceLabel()})</span>
-          </label>
+          {spotsOpen ? (
+            <label className="flex items-start gap-2 text-sm">
+              <input name="founding" type="checkbox" className="mt-1" />
+              <span>{offer}</span>
+            </label>
+          ) : (
+            <p className="text-sm leading-6 text-slate-soft">
+              A standard claim is still open for this profile.
+            </p>
+          )}
         </ActionForm>
         <FoundingCta source="claim" />
       </section>

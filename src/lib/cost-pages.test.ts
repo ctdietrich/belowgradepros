@@ -89,6 +89,16 @@ test("every cost page has a price block and every cited source resolves", () => 
   }
 });
 
+test("cost pages do not send quotes to founding contractors", () => {
+  const cta = readFileSync(new URL("../components/QuoteCta.tsx", import.meta.url), "utf8");
+  assert.match(cta, /Request a free quote\. No obligation\./);
+  assert.equal(cta.includes("Goes to founding contractors"), false);
+  assert.equal(cta.includes("/contact?"), true);
+  for (const page of getAllCostPages()) {
+    assert.equal(JSON.stringify(page).includes("Goes to founding"), false, page.path);
+  }
+});
+
 test("unknown cost slugs are not published", () => {
   assert.equal(getCostPage("encapsulation", "miami"), null);
   assert.equal(getCostPage("foundation", "dallas-fort-worth"), null);

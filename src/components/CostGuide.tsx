@@ -76,7 +76,6 @@ export function CostGuide({ page }: { page: CostPage }) {
               service={service}
               source={page.path}
               label={page.ctaLabel}
-              microcopy={page.ctaMicrocopy}
               appearance="on-dark"
             />
           </div>
@@ -131,7 +130,6 @@ export function CostGuide({ page }: { page: CostPage }) {
             service={service}
             source={page.path}
             label={page.ctaLabel}
-            microcopy={page.ctaMicrocopy}
           />
         </div>
         <nav className="mt-10" aria-label="Related pages">

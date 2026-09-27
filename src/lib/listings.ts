@@ -98,6 +98,16 @@ export async function getListingBySlug(slug: string, includeDraft = false) {
   });
 }
 
+/** Published listing with founding=true. Drafts and non-founding profiles never match. */
+export async function getFoundingBadgeListing(slug: string) {
+  const value = slug.trim();
+  if (!value) return null;
+  return prisma.listing.findFirst({
+    where: { slug: value, founding: true, ...published },
+    select: { id: true, slug: true, name: true, founding: true },
+  });
+}
+
 export async function getCities() {
   return prisma.city.findMany({
     include: {
@@ -167,7 +177,13 @@ export async function getPublishedListingByRef(ref?: string | null) {
       ...published,
       OR: [{ id: value }, { slug: value }],
     },
-    select: { id: true, slug: true, name: true, claimable: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      claimable: true,
+      cities: { select: { city: { select: { slug: true, name: true } } } },
+    },
   });
 }
 

@@ -46,6 +46,7 @@ model Listing {
   services       Json
   featured       Boolean        @default(false)
   founding       Boolean        @default(false)
+  foundingAt     DateTime?
   verified       Boolean        @default(false)
   status         String         @default("draft")
   sourceUrl      String?
@@ -55,6 +56,7 @@ model Listing {
   updatedAt      DateTime       @updatedAt
   cities         ListingCity[]
   claims         ClaimRequest[]
+  leads          Lead[]
 }
 
 model ListingCity {
@@ -76,6 +78,25 @@ model ClaimRequest {
   founding  Boolean  @default(false)
   status    String   @default("pending")
   createdAt DateTime @default(now())
+}
+
+/// Homeowner quote for one listing. Never shared with another contractor.
+model Lead {
+  id          String    @id @default(cuid())
+  listingId   String
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingSlug String
+  name        String
+  email       String?
+  phone       String?
+  zip         String
+  service     String
+  message     String
+  createdAt   DateTime  @default(now())
+  forwardedAt DateTime?
+  billedAt    DateTime?
+
+  @@index([listingId, createdAt])
 }
 
 model Submission {

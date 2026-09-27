@@ -17,16 +17,22 @@ import {
   site,
   type AdditionalServiceKey,
 } from "@/lib/config";
-import { notifyLead, type LeadAlertInput } from "@/lib/notify";
-import { getListingBySlug } from "@/lib/listings";
-import { foundingCheckoutUrl, foundingNextStep } from "@/lib/stripe";
+import { foundingAvailability, foundingOfferCopy, foundingSpotsFullMessage } from "@/lib/founding";
+import { leadAlertProvider, notifyLead, type LeadAlertInput } from "@/lib/notify";
+import {
+  QUOTE_RATE_WINDOW_MS,
+  quoteServiceLabel,
+  quoteSubmissionRateLimited,
+  saveQuoteThenNotify,
+  validateQuoteLead,
+} from "@/lib/quote-lead";
 import {
   importListingsFromCsv,
   isCsvUpload,
   MAX_IMPORT_CSV_BYTES,
   summarizeImport,
 } from "@/lib/import-listings";
-import { normalizeListingStatus } from "@/lib/listing-status";
+import { normalizeListingStatus, publishedListingWhere } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
 
 export type ActionState = {
@@ -168,7 +174,13 @@ export async function submitClaim(
     return { ok: false, error: "That listing is not available to claim." };
   }
 
-  const founding = formData.get("founding") === "on";
+  const foundingRequested = formData.get("founding") === "on";
+  const withCities = await prisma.listing.findUnique({
+    where: { id: listing.id },
+    select: { cities: { select: { city: { select: { slug: true, name: true } } } } },
+  });
+  const availability = await foundingAvailability(withCities?.cities.map((item) => item.city) ?? []);
+  const founding = foundingRequested && availability.spotsOpen;
 
   await prisma.claimRequest.create({
     data: { listingId, name, email, message, founding },
@@ -187,13 +199,17 @@ export async function submitClaim(
     adminPath: `/admin/listings/${listing.id}`,
   });
 
-  if (founding) {
-    const next = foundingNextStep({ slug: listing.slug, email });
+  if (foundingRequested && !availability.spotsOpen && availability.fullCityName) {
     return {
       ok: true,
-      message: `Claim received. We will write back from ${site.email} about the profile and featured placement. Next step: founding checkout for ${listing.name}.`,
-      nextHref: next.href,
-      nextLabel: next.label,
+      message: `Claim received. ${foundingSpotsFullMessage(availability.fullCityName)}, so this is a standard claim. We will write back from ${site.email}.`,
+    };
+  }
+
+  if (founding) {
+    return {
+      ok: true,
+      message: `Claim received. We review it before marking ${listing.name} founding. ${foundingOfferCopy()} We will write back from ${site.email}.`,
     };
   }
 
@@ -203,58 +219,94 @@ export async function submitClaim(
   };
 }
 
-export async function startFoundingCheckout(
+export async function requestQuote(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const email = readString(formData, "email").toLowerCase();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { ok: false, error: "Please enter a valid email so we can follow up." };
-  }
+  const parsed = validateQuoteLead({
+    name: readString(formData, "name"),
+    email: readString(formData, "email"),
+    phone: readString(formData, "phone"),
+    zip: readString(formData, "zip"),
+    service: readString(formData, "service"),
+    message: readString(formData, "message"),
+    honeypot: readString(formData, "fax"),
+  });
+  if (!parsed.ok) return { ok: false, error: parsed.error };
 
-  const listingRef = readString(formData, "listing");
-  const listing = listingRef ? await getListingBySlug(listingRef) : null;
-  const bio = listing
-    ? `Request for founding / featured placement for ${listing.name} (slug: ${listing.slug}).`
-    : "Request for founding / featured placement from the founding page.";
+  const thanks = "Thanks. Your quote request is with this contractor.";
+  if (parsed.ignored) return { ok: true, message: thanks };
 
-  await prisma.submission.create({
-    data: {
-      type: "contractor",
-      name: listing?.name ?? "Founding listing request",
-      email,
-      website: listing?.website ?? null,
-      cities: "",
-      primaryService: listing?.primaryService ?? "foundation",
-      services: "",
-      bio,
-      founding: true,
+  const listingId = readString(formData, "listingId");
+  const listing = listingId
+    ? await prisma.listing.findFirst({
+        where: { id: listingId, ...publishedListingWhere },
+        select: { id: true, slug: true, name: true },
+      })
+    : null;
+  if (!listing) return { ok: false, error: "That listing is not available." };
+
+  const since = new Date(Date.now() - QUOTE_RATE_WINDOW_MS);
+  const contact: Prisma.LeadWhereInput[] = [];
+  if (parsed.value.email) contact.push({ email: parsed.value.email });
+  if (parsed.value.phone) contact.push({ phone: parsed.value.phone });
+  const recent = await prisma.lead.count({
+    where: {
+      listingId: listing.id,
+      createdAt: { gte: since },
+      OR: contact,
     },
   });
-  revalidatePath("/admin");
-  await scheduleLeadAlert({
-    action: "startFoundingCheckout",
-    listingName: listing?.name,
-    listingSlug: listing?.slug,
-    contactName: listing?.name ?? email,
-    email,
-    website: listing?.website,
-    note: bio,
-    founding: true,
-    adminPath: "/admin",
-  });
-
-  const link = foundingCheckoutUrl({ slug: listing?.slug, email });
-  if (link) {
-    redirect(link);
+  if (quoteSubmissionRateLimited(recent)) {
+    return {
+      ok: false,
+      error: "Please wait a few minutes before sending another request for this contractor.",
+    };
   }
 
-  return {
-    ok: true,
-    message: listing
-      ? `Thanks — we will follow up from ${site.email} to activate featured placement for ${listing.name}.`
-      : `Thanks — we will follow up from ${site.email} to activate featured placement.`,
-  };
+  await saveQuoteThenNotify({
+    provider: leadAlertProvider(),
+    save: () =>
+      prisma.lead.create({
+        data: {
+          listingId: listing.id,
+          listingSlug: listing.slug,
+          name: parsed.value.name,
+          email: parsed.value.email,
+          phone: parsed.value.phone,
+          zip: parsed.value.zip,
+          service: parsed.value.service,
+          message: parsed.value.message,
+        },
+      }),
+    notify: () =>
+      scheduleLeadAlert({
+        action: "requestQuote",
+        listingName: listing.name,
+        listingSlug: listing.slug,
+        contactName: parsed.value.name,
+        email: parsed.value.email,
+        note: [
+          `Service: ${quoteServiceLabel(parsed.value.service)}`,
+          `Phone: ${parsed.value.phone ?? "—"}`,
+          `ZIP: ${parsed.value.zip}`,
+          parsed.value.message,
+        ].join("\n"),
+        adminPath: "/admin/leads",
+      }),
+  });
+
+  try {
+    revalidatePath("/admin");
+    revalidatePath("/admin/leads");
+  } catch (error) {
+    console.error(
+      "[quote] lead saved; revalidate failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  return { ok: true, message: thanks };
 }
 
 export async function loginAdmin(
@@ -412,6 +464,19 @@ export async function saveListing(
   const slug = payload.slug || slugify(payload.name);
   if (!slug) return { ok: false, error: "A URL slug is required." };
 
+  let foundingAt: Date | undefined;
+  if (payload.founding) {
+    if (!id) {
+      foundingAt = new Date();
+    } else {
+      const existing = await prisma.listing.findUnique({
+        where: { id },
+        select: { foundingAt: true },
+      });
+      if (!existing?.foundingAt) foundingAt = new Date();
+    }
+  }
+
   const data = {
     type: payload.type,
     status: payload.status,
@@ -431,6 +496,7 @@ export async function saveListing(
     sourceUrl: payload.sourceUrl,
     featured: payload.featured,
     founding: payload.founding,
+    ...(foundingAt ? { foundingAt } : {}),
     verified: payload.verified,
     claimable: payload.claimable,
   };
@@ -488,7 +554,28 @@ export async function updateInboxStatus(formData: FormData) {
     await prisma.submission.update({ where: { id }, data: { status } });
   }
   if (kind === "claim") {
-    await prisma.claimRequest.update({ where: { id }, data: { status } });
+    const claim = await prisma.claimRequest.update({
+      where: { id },
+      data: { status },
+      include: {
+        listing: {
+          include: { cities: { include: { city: { select: { slug: true, name: true } } } } },
+        },
+      },
+    });
+    // "Mark reviewed" is the claim approval step. Founding is granted here, not at submit.
+    if (status === "reviewed" && claim.founding && !claim.listing.founding) {
+      const availability = await foundingAvailability(
+        claim.listing.cities.map((item) => item.city),
+      );
+      if (availability.spotsOpen) {
+        await prisma.listing.update({
+          where: { id: claim.listingId },
+          data: { founding: true, foundingAt: new Date() },
+        });
+        revalidatePublic();
+      }
+    }
   }
   revalidatePath("/admin");
 }

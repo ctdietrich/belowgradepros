@@ -33,7 +33,6 @@ export type CostPage = {
   };
   lede: string;
   ctaLabel: string;
-  ctaMicrocopy?: string;
   sections: { heading: string; bullets: string[] }[];
   signs: string[];
   signsCta?: CostLink;
@@ -192,9 +191,6 @@ function buildPage(seed: PageSeed): CostPage {
     ctaLabel: encap
       ? `Get encapsulation quotes in ${seed.cityName}`
       : `Get foundation repair quotes in ${seed.cityName}`,
-    ctaMicrocopy: encap
-      ? `Goes to founding contractors who serve ${seed.cityName}. No obligation.`
-      : undefined,
     sections: [
       {
         heading: "What the price range covers",

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { foundingCheckoutUrl, foundingNextStep, foundingPaymentLink } from "./stripe";
+import { foundingCheckoutUrl, foundingNextStep, foundingPaymentLink, foundingPriceLabel } from "./stripe";
 
 const ENV_KEYS = ["STRIPE_PAYMENT_LINK", "NEXT_PUBLIC_STRIPE_PAYMENT_LINK"] as const;
 const previous = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
@@ -19,6 +19,10 @@ afterEach(() => {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+});
+
+test("foundingPriceLabel is a single monthly rate", () => {
+  assert.equal(foundingPriceLabel(), "$49/mo");
 });
 
 test("server STRIPE_PAYMENT_LINK is read ahead of the public build-time var", () => {

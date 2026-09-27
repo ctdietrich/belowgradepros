@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export const metadata = { title: "Admin" };
 
 export default async function AdminPage() {
-  const [listings, submissions, claims] = await Promise.all([
+  const [listings, submissions, claims, leadCount] = await Promise.all([
     prisma.listing.findMany({
       include: { cities: { include: { city: true } } },
       orderBy: [{ status: "asc" }, { name: "asc" }],
@@ -16,6 +16,7 @@ export default async function AdminPage() {
       include: { listing: true },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.lead.count(),
   ]);
 
   return (
@@ -23,7 +24,10 @@ export default async function AdminPage() {
       <header>
         <h1 className="font-display text-4xl text-slate">Directory desk</h1>
         <p className="mt-2 text-sm text-muted">
-          {listings.length} listings · {submissions.length} submissions · {claims.length} claims
+          {listings.length} listings · {submissions.length} submissions · {claims.length} claims ·{" "}
+          <Link href="/admin/leads" className="text-amber-deep hover:underline">
+            {leadCount} quote requests
+          </Link>
         </p>
         <p className="mt-2 text-xs text-muted">
           Bulk hero CSV:{" "}
@@ -122,6 +126,7 @@ export default async function AdminPage() {
           }))}
         />
       </section>
+
     </main>
   );
 }

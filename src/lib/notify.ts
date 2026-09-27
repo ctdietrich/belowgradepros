@@ -5,7 +5,7 @@ export const LEAD_ALERT_TIMEOUT_MS = 5_000;
 
 export const DEFAULT_LEAD_ALERT_FROM = "BelowGradePros <hello@belowgradepros.com>";
 
-export const LEAD_ACTIONS = ["submitClaim", "submitListing", "startFoundingCheckout"] as const;
+export const LEAD_ACTIONS = ["submitClaim", "submitListing", "startFoundingCheckout", "requestQuote"] as const;
 export type LeadAction = (typeof LEAD_ACTIONS)[number];
 
 export type LeadAlertInput = {
