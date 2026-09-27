@@ -13,11 +13,11 @@ test("foundingPriceLabel is only the post-first-lead rate", () => {
   assert.equal(foundingPriceLabel(), "$49/mo");
 });
 
-test("founding offer copy is free until the first lead, then $49/mo", () => {
+test("founding offer copy is free until the first real homeowner lead, then $49/mo", () => {
   const copy = foundingOfferCopy();
   assert.equal(
     copy,
-    "Free until your first lead, then $49/mo locked. Exclusive leads, no per-lead fees. 3 founding spots per city.",
+    "Free until we send you your first real homeowner lead, then $49/mo locked. Cancel anytime. Exclusive leads, never shared or resold, no per-lead fees. Only 3 founding spots per city.",
   );
   assert.equal(copy.includes(foundingPriceLabel()), true);
   assert.equal(copy.includes("199"), false);

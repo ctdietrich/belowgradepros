@@ -156,7 +156,7 @@ npm run test:seo          # canonical URL + sitemap hub path checks
 
 ## Product boundaries
 
-- Founding contractors are free until their first homeowner lead, then $49/mo locked. Exclusive leads, no per-lead fees, 3 founding spots per city. Stripe checkout is not in this flow.
+- Founding contractors: free until we send the first real homeowner lead, then $49/mo locked. Cancel anytime. Exclusive leads, never shared or resold, no per-lead fees. Only 3 founding spots per city. Stripe checkout is not in this flow.
 - No contractor auth beyond the claim inbox
 - No Beehiiv / newsletter product
 - No booking engine

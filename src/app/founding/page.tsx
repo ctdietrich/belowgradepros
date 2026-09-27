@@ -37,7 +37,11 @@ export default async function FoundingPage({
 
   return (
     <main>
-      <PageHero kicker="Founding contractors" title="Free until your first lead." lede={offer} />
+      <PageHero
+        kicker="Founding contractors"
+        title="Free until your first real homeowner lead."
+        lede={offer}
+      />
       <section className="mx-auto grid max-w-3xl gap-8 px-5 py-12">
         <div className="rounded-2xl border border-slate/10 bg-white p-6 text-sm leading-7 text-slate-soft shadow-sm">
           <p>{offer}</p>

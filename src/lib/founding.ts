@@ -8,11 +8,12 @@ export const FOUNDING_SPOTS_PER_CITY = 3;
 export type FoundingCityRef = { slug: string; name: string };
 
 /**
- * Offer copy for /founding, /claim, listing CTAs, and their metadata.
- * `foundingPriceLabel()` is only the rate after the first lead.
+ * Full offer line for /founding, /claim, and listing CTAs.
+ * `foundingPriceLabel()` is only the rate after the first real homeowner lead.
+ * Metadata and buttons may shorten this, but must not contradict it.
  */
 export function foundingOfferCopy() {
-  return `Free until your first lead, then ${foundingPriceLabel()} locked. Exclusive leads, no per-lead fees. 3 founding spots per city.`;
+  return `Free until we send you your first real homeowner lead, then ${foundingPriceLabel()} locked. Cancel anytime. Exclusive leads, never shared or resold, no per-lead fees. Only 3 founding spots per city.`;
 }
 
 /** Spots remaining from a count of published founding listings in one city. */

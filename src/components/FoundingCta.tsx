@@ -29,7 +29,9 @@ export function FoundingCta({
   return (
     <div className="rounded-2xl border border-amber/30 bg-amber/5 p-6 md:p-8">
       <p className="text-xs uppercase tracking-[0.18em] text-amber-deep">Founding</p>
-      <p className="mt-2 font-display text-2xl text-slate md:text-3xl">Free until your first lead.</p>
+      <p className="mt-2 font-display text-2xl text-slate md:text-3xl">
+        Free until your first real homeowner lead.
+      </p>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-soft">{foundingOfferCopy()}</p>
       <div className="mt-5 flex flex-wrap gap-3">
         <Link

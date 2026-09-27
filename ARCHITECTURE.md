@@ -7,11 +7,11 @@ BelowGradePros is a **vertical directory** cloned from [FishTheFlats](https://gi
 ```
 Demand  →  browse city hubs / primary services  →  inquire on the listing
 Supply  →  submit or claim  →  editorial review in /admin  →  published listing
-Paid    →  founding: free until the first lead, then $49/mo locked (3 spots per city)
+Paid    →  founding: free until the first real homeowner lead, then $49/mo locked (3 spots per city)
 Ops     →  password-gated CRUD + CSV import
 ```
 
-There is no availability engine. Founding is free until the first homeowner lead, then $49/mo locked. Stripe helpers stay in the repo for later billing and are not shown on `/founding` or `/claim`. The product is the catalog and the desk.
+There is no availability engine. Founding is free until we send the first real homeowner lead, then $49/mo locked. Stripe helpers stay in the repo for later billing and are not shown on `/founding` or `/claim`. The product is the catalog and the desk.
 
 ## Stack map
 
