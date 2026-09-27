@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   FOUNDING_SPOTS_PER_CITY,
@@ -23,6 +24,16 @@ test("founding offer copy is free until the first real homeowner lead, then $49/
   assert.equal(copy.includes("199"), false);
   assert.equal(copy.includes("first 10"), false);
   assert.equal(copy.includes("per metro"), false);
+});
+
+test("founding page says what counts as a real lead", () => {
+  const page = readFileSync(new URL("../app/founding/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /What counts as a real lead/);
+  assert.match(page, /verified phone number/);
+  assert.match(page, /Inside your service area/);
+  assert.match(page, /For a service you offer/);
+  assert.match(page, /Not a duplicate/);
+  assert.match(page, /Bad leads get credited\./);
 });
 
 test("foundingSpotsLeft is 3 minus published founding listings in the city", () => {

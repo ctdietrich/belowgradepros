@@ -54,6 +54,16 @@ export default async function FoundingPage({
             .
           </p>
         </div>
+        <div className="rounded-2xl border border-slate/10 bg-white p-6 text-sm leading-7 text-slate-soft shadow-sm">
+          <h2 className="font-display text-2xl text-slate">What counts as a real lead</h2>
+          <ul className="mt-3 list-disc space-y-1 pl-5">
+            <li>A verified phone number</li>
+            <li>Inside your service area</li>
+            <li>For a service you offer</li>
+            <li>Not a duplicate</li>
+          </ul>
+          <p className="mt-3">Bad leads get credited.</p>
+        </div>
         {listing ? (
           <div className="rounded-2xl border border-amber/40 bg-white px-5 py-4 text-sm leading-6 text-slate">
             <p>
