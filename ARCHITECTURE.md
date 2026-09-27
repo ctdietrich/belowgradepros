@@ -7,7 +7,7 @@ BelowGradePros is a **vertical directory** cloned from [FishTheFlats](https://gi
 ```
 Demand  →  browse city hubs / primary services  →  inquire on the listing
 Supply  →  submit or claim  →  editorial review in /admin  →  published listing
-Paid    →  founding / featured upgrade ($199–299/mo Stripe stub)
+Paid    →  founding / featured upgrade ($199/mo Stripe stub)
 Ops     →  password-gated CRUD + CSV import
 ```
 

@@ -29,7 +29,7 @@ Brand lock: typographic wordmark **BelowGrade** (slate) + **Pros** (amber, heavi
 | `/l/[slug]` | Listing detail + JSON-LD |
 | `/submit` | Contractor submission |
 | `/claim` | Claim a sourced profile |
-| `/founding` | Founding / featured upgrade ($199–299/mo Stripe stub) |
+| `/founding` | Founding / featured upgrade ($199/mo Stripe stub) |
 | `/about` | What the product is (and is not) |
 | `/admin` | Password-gated CRUD (`ADMIN_PASSWORD`) |
 | `/admin/import` | Signed-in CSV upsert (same logic as `npm run import:listings`) |
@@ -156,7 +156,7 @@ npm run test:seo          # canonical URL + sitemap hub path checks
 
 ## Product boundaries
 
-- Stripe founding path is a **stub** ($199–299/mo Payment Link placeholder). Live Checkout is out of scope until keys exist.
+- Stripe founding path is a **stub** ($199/mo Payment Link placeholder). Live Checkout is out of scope until keys exist.
 - No contractor auth beyond the claim inbox
 - No Beehiiv / newsletter product
 - No booking engine
