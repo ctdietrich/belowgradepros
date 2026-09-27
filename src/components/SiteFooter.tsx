@@ -48,6 +48,14 @@ export function SiteFooter() {
               </Link>
             </li>
           </ul>
+          <p className="mt-8 text-xs uppercase tracking-[0.2em] text-amber">Resources</p>
+          <ul className="mt-3 space-y-2 text-sm text-page/90">
+            <li>
+              <Link href="/tools/crawl-space-moisture-checklist" className="hover:text-amber">
+                Crawl space moisture checklist
+              </Link>
+            </li>
+          </ul>
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-amber">Contractors</p>
