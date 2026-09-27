@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import {
   ADMIN_COOKIE,
@@ -16,7 +17,9 @@ import {
   site,
   type AdditionalServiceKey,
 } from "@/lib/config";
-import { foundingPaymentLink } from "@/lib/stripe";
+import { notifyLead, type LeadAlertInput } from "@/lib/notify";
+import { getListingBySlug } from "@/lib/listings";
+import { foundingCheckoutUrl, foundingNextStep } from "@/lib/stripe";
 import {
   importListingsFromCsv,
   isCsvUpload,
@@ -26,7 +29,31 @@ import {
 import { normalizeListingStatus } from "@/lib/listing-status";
 import { prisma } from "@/lib/prisma";
 
-export type ActionState = { ok: boolean; error?: string; message?: string } | null;
+export type ActionState = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  nextHref?: string;
+  nextLabel?: string;
+} | null;
+
+/**
+ * Email after the response. `after()` (Next 15+) does not block the action.
+ * Outside a request it throws; fall back to an awaited send, which still
+ * gives up after the timeout inside `notifyLead` and never throws.
+ */
+function scheduleLeadAlert(input: LeadAlertInput) {
+  try {
+    after(() => notifyLead(input));
+  } catch (error) {
+    console.error(
+      "[lead-alert] after() unavailable, sending inline:",
+      error instanceof Error ? error.message : error,
+    );
+    return notifyLead(input);
+  }
+  return Promise.resolve();
+}
 
 export type ImportActionState = {
   ok: boolean;
@@ -102,6 +129,16 @@ export async function submitListing(
   });
 
   revalidatePath("/admin");
+  await scheduleLeadAlert({
+    action: "submitListing",
+    listingName: name,
+    contactName: name,
+    email,
+    website,
+    note: bio,
+    founding,
+    adminPath: "/admin",
+  });
   return {
     ok: true,
     message: founding
@@ -138,11 +175,31 @@ export async function submitClaim(
   });
 
   revalidatePath("/admin");
+  await scheduleLeadAlert({
+    action: "submitClaim",
+    listingName: listing.name,
+    listingSlug: listing.slug,
+    contactName: name,
+    email,
+    website: listing.website,
+    note: message,
+    founding,
+    adminPath: `/admin/listings/${listing.id}`,
+  });
+
+  if (founding) {
+    const next = foundingNextStep({ slug: listing.slug, email });
+    return {
+      ok: true,
+      message: `Claim received. We will write back from ${site.email} about the profile and featured placement. Next step: founding checkout for ${listing.name}.`,
+      nextHref: next.href,
+      nextLabel: next.label,
+    };
+  }
+
   return {
     ok: true,
-    message: founding
-      ? `Claim received. We will write back from ${site.email} about the profile and featured placement.`
-      : `Claim received. We will write back from ${site.email}.`,
+    message: `Claim received. We will write back from ${site.email}.`,
   };
 }
 
@@ -155,28 +212,48 @@ export async function startFoundingCheckout(
     return { ok: false, error: "Please enter a valid email so we can follow up." };
   }
 
-  const link = foundingPaymentLink();
-  if (link) {
-    redirect(link);
-  }
+  const listingRef = readString(formData, "listing");
+  const listing = listingRef ? await getListingBySlug(listingRef) : null;
+  const bio = listing
+    ? `Request for founding / featured placement for ${listing.name} (slug: ${listing.slug}).`
+    : "Request for founding / featured placement from the founding page.";
 
   await prisma.submission.create({
     data: {
       type: "contractor",
-      name: "Founding listing request",
+      name: listing?.name ?? "Founding listing request",
       email,
+      website: listing?.website ?? null,
       cities: "",
-      primaryService: "foundation",
+      primaryService: listing?.primaryService ?? "foundation",
       services: "",
-      bio: "Request for founding / featured placement from the founding page.",
+      bio,
       founding: true,
     },
   });
   revalidatePath("/admin");
+  await scheduleLeadAlert({
+    action: "startFoundingCheckout",
+    listingName: listing?.name,
+    listingSlug: listing?.slug,
+    contactName: listing?.name ?? email,
+    email,
+    website: listing?.website,
+    note: bio,
+    founding: true,
+    adminPath: "/admin",
+  });
+
+  const link = foundingCheckoutUrl({ slug: listing?.slug, email });
+  if (link) {
+    redirect(link);
+  }
 
   return {
     ok: true,
-    message: `Thanks — we will follow up from ${site.email} to activate featured placement.`,
+    message: listing
+      ? `Thanks — we will follow up from ${site.email} to activate featured placement for ${listing.name}.`
+      : `Thanks — we will follow up from ${site.email} to activate featured placement.`,
   };
 }
 

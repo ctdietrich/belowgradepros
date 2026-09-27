@@ -4,7 +4,8 @@ import { startFoundingCheckout } from "@/app/actions";
 import { ActionForm } from "@/components/FormStatus";
 import { PageHero } from "@/components/PageHero";
 import { site } from "@/lib/config";
-import { foundingPaymentLink, foundingPriceLabel } from "@/lib/stripe";
+import { getListingBySlug } from "@/lib/listings";
+import { foundingCheckoutUrl, foundingPriceLabel } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Founding listing",
@@ -15,13 +16,18 @@ export const metadata: Metadata = {
 const field =
   "mt-1 w-full rounded-lg border border-slate/15 bg-white px-3 py-2 outline-none focus:border-amber";
 
+// Payment Link is read per request (STRIPE_PAYMENT_LINK). Do not statically cache it.
+export const dynamic = "force-dynamic";
+
 export default async function FoundingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; listing?: string }>;
 }) {
-  await searchParams;
-  const link = foundingPaymentLink();
+  const { listing: listingRef } = await searchParams;
+  const requested = listingRef?.trim();
+  const listing = requested ? await getListingBySlug(requested) : null;
+  const link = foundingCheckoutUrl({ slug: listing?.slug });
 
   return (
     <main>
@@ -48,6 +54,12 @@ export default async function FoundingPage({
             and check the founding option.
           </p>
         </div>
+        {listing ? (
+          <p className="rounded-2xl border border-amber/40 bg-white px-5 py-4 text-sm leading-6 text-slate">
+            This founding upgrade is for <span className="font-medium">{listing.name}</span>
+            <span className="text-slate-soft"> · {listing.slug}</span>.
+          </p>
+        ) : null}
         {link ? (
           <a
             href={link}
@@ -61,6 +73,7 @@ export default async function FoundingPage({
             className="space-y-4"
             submitLabel="Request featured placement"
           >
+            {listing ? <input type="hidden" name="listing" value={listing.slug} /> : null}
             <label className="block text-sm">
               Work email
               <input
@@ -72,8 +85,8 @@ export default async function FoundingPage({
               />
             </label>
             <p className="text-sm leading-6 text-slate-soft">
-              We will write back from {site.email} to activate featured placement. You can also
-              email us directly.
+              We will write back from {site.email} to activate featured placement
+              {listing ? ` for ${listing.name}` : ""}. You can also email us directly.
             </p>
           </ActionForm>
         )}

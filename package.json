@@ -5,14 +5,15 @@
   "description": "BelowGradePros.com — specialty directory for foundation repair and crawl-space/basement encapsulation contractors.",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/with-direct-url.mjs prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test src/lib/*.test.ts",
     "test:seo": "tsx --test src/lib/config.test.ts src/lib/hub-densify.test.ts src/lib/jsonld.test.ts",
     "seed": "prisma db seed",
     "import:listings": "tsx scripts/import-listings.ts",
-    "db:deploy": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "db:deploy": "node scripts/with-direct-url.mjs prisma migrate deploy",
+    "postinstall": "node scripts/with-direct-url.mjs prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -20,12 +21,14 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "next": "16.3.5",
+    "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

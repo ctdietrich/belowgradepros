@@ -62,16 +62,24 @@ Seed data uses **@example.com** addresses only and includes 20 published contrac
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | **Required.** Postgres connection string |
+| `DATABASE_URL` | **Required.** Postgres connection string. On Prisma Postgres, use the pooled host `pooled.db.prisma.io` for the app. |
+| `DIRECT_URL` | Direct `db.prisma.io` URL for `prisma migrate deploy`. If unset, `npm run db:deploy` and `npm run build` fall back to `DATABASE_URL`. Set this whenever `DATABASE_URL` is the pooled host. |
 | `ADMIN_PASSWORD` | **Required** in production. Shared password for `/admin` |
 | `NEXT_PUBLIC_SITE_URL` | **Required for production SEO.** Canonical origin for metadataBase, canonical/OG URLs, `robots.txt` Sitemap, and sitemap `<loc>`s. Set to `https://belowgradepros.com` on Vercel Production. |
-| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Founding Payment Link. Preview builds work when empty. |
-| `STRIPE_PAYMENT_LINK` | Optional. Server-side alias for the same Payment Link |
+| `STRIPE_PAYMENT_LINK` | Optional. Founding Payment Link, read on the server per request. Prefer this over the public var. |
+| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Same Payment Link, but **inlined at build time**. Changing it requires a redeploy, and it is used only when `STRIPE_PAYMENT_LINK` is empty. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional. Placeholder for a future Checkout session |
 | `STRIPE_SECRET_KEY` | Optional. Placeholder; not required to build |
 | `STRIPE_FOUNDING_PRICE_ID` | Optional. Placeholder for a future Checkout price |
+| `RESEND_API_KEY` | Optional. When set, claim / submit / founding leads email via the Resend API. |
+| `LEAD_ALERT_FROM` | Optional. Resend from-address. Default `BelowGradePros <hello@belowgradepros.com>`. |
+| `LEAD_ALERT_TO` | Optional. Lead inbox. Default `hello@belowgradepros.com`. |
+| `SMTP_USER` | Optional. With `SMTP_PASS`, used when `RESEND_API_KEY` is unset. From-address is this user. |
+| `SMTP_PASS` | Optional. SMTP password. Both user and password are required. |
+| `SMTP_HOST` | Optional. Default `smtp.gmail.com`. |
+| `SMTP_PORT` | Optional. Default `465` (implicit TLS). |
 
-No Stripe npm package. No Beehiiv (or other newsletter) variables. Empty Stripe vars keep `/founding` on a notify stub.
+No Stripe npm package. No Beehiiv (or other newsletter) variables. Empty Stripe vars keep `/founding` on a follow-up form instead of Stripe checkout. With no Resend key and no SMTP user/password, lead rows are still saved and the email send is skipped.
 
 ## Deploy on Vercel
 
@@ -79,10 +87,16 @@ Set these project environment variables (Production, and Preview if you want tho
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | Postgres URL from Vercel Postgres, Neon, Supabase, or any host. Use a pooled URL for the app if the provider offers one. |
+| `DATABASE_URL` | Yes | Postgres URL. **Prisma Postgres:** `postgres://USER:PASSWORD@pooled.db.prisma.io:5432/postgres?sslmode=require`. The runtime client on Vercel also rewrites a direct `db.prisma.io` host to `pooled.db.prisma.io` and appends `connection_limit=1&pool_timeout=20` when those params are absent. That change is not written back to the env var. |
+| `DIRECT_URL` | Yes, if `DATABASE_URL` is pooled | Direct TCP for migrations: `postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require` (same user and password). `directUrl` in `prisma/schema.prisma`. If this is unset, `npm run db:deploy` falls back to `DATABASE_URL` — only safe while that value is still the direct host. |
 | `ADMIN_PASSWORD` | Yes | Shared `/admin` password |
 | `NEXT_PUBLIC_SITE_URL` | **Yes (Production SEO)** | `https://belowgradepros.com`. Set this on the Vercel **Production** environment (and Preview if you want previews to share the same canonical). Do **not** point it at a `*.vercel.app` deployment URL. If unset on Production, the app still uses `https://belowgradepros.com` and **never** `VERCEL_URL`. Preview deploys may fall back to `VERCEL_URL` only when this var is unset. |
-| Stripe Payment Link / keys | No | Founding CTA stays stubbed until a link is set |
+| `STRIPE_PAYMENT_LINK` | No | Server Payment Link, read per request on `/founding` and after a founding claim. Redeploy after setting it. |
+| `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | No | Build-time fallback for the same link. Inlined, so a redeploy is required, and it is ignored when `STRIPE_PAYMENT_LINK` is set. |
+| `RESEND_API_KEY` | No | Lead alert email. Without this and without SMTP, alerts are skipped. |
+| `LEAD_ALERT_TO` | No | Defaults to `hello@belowgradepros.com`. |
+| `LEAD_ALERT_FROM` | No | Resend from-address. Default `BelowGradePros <hello@belowgradepros.com>`. |
+| `SMTP_USER` + `SMTP_PASS` | No | Gmail (or `SMTP_HOST` / `SMTP_PORT`) when Resend is unset. |
 
 Build already runs `prisma generate && next build`. Database pages are `force-dynamic`, so Next does not prerender them at build time. `DATABASE_URL` must still be present so Prisma can generate the client; a missing or invalid database fails at **runtime**, not during compile.
 
@@ -102,12 +116,15 @@ curl -sS https://belowgradepros.com/sitemap.xml | head
 Do **not** run migrations during the Vercel build. After the first deploy (and after later schema changes), apply migrations against production:
 
 ```bash
-# From a machine that can reach the production database
-npx prisma migrate deploy
-# or: npm run db:deploy
+# From a machine that can reach the production database.
+# Uses DIRECT_URL when set; otherwise DATABASE_URL. Do not call the Prisma
+# CLI directly unless DIRECT_URL is already in the environment.
+npm run db:deploy
 ```
 
-If `migrate deploy` fails on a pooled host (PgBouncer / Neon pooler), rerun it with the provider’s **direct / unpooled** connection string as `DATABASE_URL` for that command only.
+`npm run db:deploy` uses `DIRECT_URL` (schema `directUrl`) so migrate does not go through the Prisma Postgres pooler. If `DIRECT_URL` is unset, that script falls back to `DATABASE_URL`. Do not point `DIRECT_URL` at `pooled.db.prisma.io`.
+
+On Vercel the app client does not use the migrate URL. When `VERCEL` is set it opens `pooled.db.prisma.io` (rewritten from a direct `db.prisma.io` host) with `connection_limit=1&pool_timeout=20`, and one `PrismaClient` is reused for the life of the isolate.
 
 Then optionally load **sample** data (dev / empty staging only — this **wipes** listing tables):
 
@@ -130,7 +147,7 @@ See [docs/import-listings.md](./docs/import-listings.md).
 npm run dev         # Next.js dev server
 npm run build       # prisma generate + production build
 npm run start       # serve the production build
-npm run db:deploy         # prisma migrate deploy (production)
+npm run db:deploy         # prisma migrate deploy via DIRECT_URL (production)
 npm run seed              # reset sample cities and listings (destructive)
 npm run import:listings   # upsert listings from a CSV (see docs/import-listings.md)
 npm run lint
