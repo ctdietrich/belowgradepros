@@ -14,6 +14,7 @@ import {
 } from "@/lib/config";
 import { listingJsonLd } from "@/lib/jsonld";
 import { asStringArray, getListingBySlug, listingBadges, publicContactEmail } from "@/lib/listings";
+import { websiteLinkRel } from "@/lib/website-rel";
 
 export const dynamic = "force-dynamic";
 
@@ -149,7 +150,7 @@ export default async function ListingPage({
                       className="text-amber-deep hover:underline"
                       href={listing.website}
                       target="_blank"
-                      rel="noreferrer"
+                      rel={websiteLinkRel(listing.slug)}
                     >
                       {listing.website.replace(/^https?:\/\//, "")}
                     </a>
