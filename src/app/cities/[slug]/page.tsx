@@ -24,6 +24,7 @@ import {
   hubPageDescription,
   hubPageHeading,
   hubPageTitle,
+  hubPlaceLabel,
 } from "@/lib/hubs";
 import { cityJsonLd, hubDensifyFaqJsonLd } from "@/lib/jsonld";
 import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
@@ -42,7 +43,7 @@ export async function generateMetadata({
   const city = await getCityBySlug(slug);
   if (!city) return { title: "City" };
   const filter = normalizeHubServiceQuery(service);
-  const title = hubPageTitle(city.slug, filter);
+  const title = hubPageTitle(city.slug, filter, city);
   return {
     title,
     description: hubPageDescription(city.slug, city.description),
@@ -78,7 +79,7 @@ export default async function CityDetailPage({
           return {
             id: row?.id ?? `related:${item.slug}`,
             slug: item.slug,
-            name: hub?.name ?? row?.name ?? item.slug,
+            name: hub?.name ?? row?.name ?? hubPlaceLabel(item.slug),
             state: row?.state ?? hub?.state ?? "",
             region: row?.region ?? hub?.region ?? "",
             heroImage: row?.heroImage ?? null,
@@ -91,7 +92,7 @@ export default async function CityDetailPage({
     relatedFromDensify.length > 0
       ? relatedFromDensify
       : index.filter((item) => item.slug !== city.slug).slice(0, 3);
-  const heading = hubPageHeading(city.slug, serviceFilter);
+  const heading = hubPageHeading(city.slug, serviceFilter, city);
   const spotsLeft = await foundingSpotsLeft(city.slug);
 
   return (
