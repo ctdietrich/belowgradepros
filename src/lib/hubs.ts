@@ -373,29 +373,103 @@ export function hubPageDescription(slug: string, fallback?: string | null) {
   return getWave1Hub(slug)?.description ?? fallback ?? "";
 }
 
+/** DB city fields used when a hub has no Wave 1 title lock. */
+export type HubPlace = {
+  name?: string | null;
+  state?: string | null;
+};
+
+const US_STATE_CODES = new Set([
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC",
+]);
+
+function titleCaseWord(word: string) {
+  return word ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+}
+
+/** Trailing `-va` / `-sc` on a hub slug. Not every 2-letter token (`worth` is not a state). */
+function slugStateSuffix(slug: string): string | null {
+  const match = /-([a-z]{2})$/i.exec(slug);
+  if (!match?.[1]) return null;
+  const code = match[1].toUpperCase();
+  return US_STATE_CODES.has(code) ? code : null;
+}
+
+function stateCode(state?: string | null): string | null {
+  const code = state?.trim().toUpperCase() ?? "";
+  return US_STATE_CODES.has(code) ? code : null;
+}
+
+/**
+ * A stored `name` that is just the slug (`columbia-sc` or `Columbia Sc`) is not a
+ * human label. Names that add punctuation or drop a state suffix (`St. Louis`, `Richmond`) are.
+ */
+function isLegacySlugName(name: string, slug: string) {
+  const value = name.trim().toLowerCase();
+  if (!value) return true;
+  return value === slug.toLowerCase() || value === slug.toLowerCase().replace(/-/g, " ");
+}
+
+function endsWithState(name: string, state: string) {
+  return new RegExp(`(?:,\\s*|\\s+)${state}$`, "i").test(name);
+}
+
+/**
+ * Place label for hubs that are not in `WAVE1_HUBS`.
+ * Prefer the DB name. Append `, ST` when the slug ends in a state code
+ * (`richmond-va` → `Richmond, VA`). Legacy slug-shaped names are title-cased
+ * the same way, with that suffix uppercased.
+ */
+export function hubPlaceLabel(slug: string, place?: HubPlace | null): string {
+  const suffix = slugStateSuffix(slug);
+  const name = place?.name?.trim() ?? "";
+  if (isLegacySlugName(name, slug)) {
+    const parts = slug.split("-").filter(Boolean);
+    if (suffix) parts.pop();
+    const city = parts.map(titleCaseWord).join(" ");
+    return suffix ? `${city}, ${suffix}` : city;
+  }
+  const state = stateCode(place?.state) ?? suffix;
+  if (suffix && state && !endsWithState(name, state)) return `${name}, ${state}`;
+  return name;
+}
+
+function withPlace(label: string, service?: "foundation" | "encapsulation" | null) {
+  if (service === "foundation") return `${label} Foundation Repair Contractors`;
+  if (service === "encapsulation") return `${label} Crawl Space Encapsulation Contractors`;
+  return `${label} Foundation Repair & Crawl Encapsulation`;
+}
+
 /** Document title / meta title. Brand suffix comes from the root layout template only. */
-export function hubPageTitle(slug: string, service?: "foundation" | "encapsulation" | null) {
+export function hubPageTitle(
+  slug: string,
+  service?: "foundation" | "encapsulation" | null,
+  place?: HubPlace | null,
+) {
   const hub = getWave1Hub(slug);
   if (hub) {
     if (service === "foundation") return hub.foundationTitle;
     if (service === "encapsulation") return hub.encapsulationTitle;
     return hub.title;
   }
-  const fallback = slug
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-  if (service === "foundation") return `${fallback} Foundation Repair Contractors`;
-  if (service === "encapsulation") return `${fallback} Crawl Space Encapsulation Contractors`;
-  return `${fallback} Foundation Repair & Crawl Encapsulation`;
+  return withPlace(hubPlaceLabel(slug, place), service);
 }
 
 /** Visible H1. Uses a distinct `h1` string when SEO locked it separately from `title`. */
-export function hubPageHeading(slug: string, service?: "foundation" | "encapsulation" | null) {
-  if (service) return hubPageTitle(slug, service);
+export function hubPageHeading(
+  slug: string,
+  service?: "foundation" | "encapsulation" | null,
+  place?: HubPlace | null,
+) {
+  if (service) return hubPageTitle(slug, service, place);
   const hub = getWave1Hub(slug);
   if (hub && "h1" in hub && hub.h1) return hub.h1;
-  return hubPageTitle(slug);
+  return hubPageTitle(slug, null, place);
 }
 
 export function homepageCardHref(slug: string) {
@@ -493,7 +567,7 @@ export function buildCityIndex(cities: CityIndexRow[]) {
     .map((city) => ({
       id: city.id ?? city.slug,
       slug: city.slug,
-      name: city.name,
+      name: hubPlaceLabel(city.slug, city),
       state: city.state,
       region: city.region,
       heroImage: city.heroImage ?? null,
