@@ -384,12 +384,17 @@ function slugify(value: string) {
     .slice(0, 80);
 }
 
-function revalidatePublic() {
-  revalidatePath("/");
-  revalidatePath("/contractors");
-  revalidatePath("/cities");
-  revalidatePath("/services");
-  revalidatePath("/admin");
+function revalidatePublic(extraPaths: readonly string[] = []) {
+  const paths = new Set<string>([
+    "/",
+    "/sitemap.xml",
+    "/cities",
+    "/contractors",
+    "/services",
+    "/admin",
+    ...extraPaths,
+  ]);
+  for (const path of paths) revalidatePath(path);
 }
 
 export async function importListingsCsv(
@@ -428,7 +433,7 @@ export async function importListingsCsv(
     });
 
     if (!dryRun) {
-      revalidatePublic();
+      revalidatePublic(result.paths);
     }
 
     return {
@@ -465,16 +470,18 @@ export async function saveListing(
   if (!slug) return { ok: false, error: "A URL slug is required." };
 
   let foundingAt: Date | undefined;
-  if (payload.founding) {
-    if (!id) {
-      foundingAt = new Date();
-    } else {
-      const existing = await prisma.listing.findUnique({
+  const existing = id
+    ? await prisma.listing.findUnique({
         where: { id },
-        select: { foundingAt: true },
-      });
-      if (!existing?.foundingAt) foundingAt = new Date();
-    }
+        select: {
+          foundingAt: true,
+          slug: true,
+          cities: { select: { city: { select: { slug: true } } } },
+        },
+      })
+    : null;
+  if (payload.founding) {
+    if (!id || !existing?.foundingAt) foundingAt = new Date();
   }
 
   const data = {
@@ -530,8 +537,23 @@ export async function saveListing(
     return { ok: false, error: "Could not save the listing." };
   }
 
-  revalidatePublic();
-  revalidatePath(`/l/${slug}`);
+  const linkedCities = payload.cityIds.length
+    ? await prisma.city.findMany({
+        where: { id: { in: payload.cityIds } },
+        select: { slug: true },
+      })
+    : [];
+  const citySlugs = [
+    ...new Set([
+      ...(existing?.cities.map((item) => item.city.slug) ?? []),
+      ...linkedCities.map((city) => city.slug),
+    ]),
+  ];
+  const listingSlugs = [...new Set([existing?.slug, slug].filter((value): value is string => Boolean(value)))];
+  revalidatePublic([
+    ...citySlugs.map((citySlug) => `/cities/${citySlug}`),
+    ...listingSlugs.map((listingSlug) => `/l/${listingSlug}`),
+  ]);
   redirect("/admin");
 }
 
@@ -539,8 +561,18 @@ export async function deleteListing(formData: FormData) {
   await requireAdmin();
   const id = readString(formData, "id");
   if (!id) return;
+  const existing = await prisma.listing.findUnique({
+    where: { id },
+    select: {
+      slug: true,
+      cities: { select: { city: { select: { slug: true } } } },
+    },
+  });
   await prisma.listing.delete({ where: { id } });
-  revalidatePublic();
+  revalidatePublic([
+    ...(existing ? [`/l/${existing.slug}`] : []),
+    ...(existing?.cities.map((item) => `/cities/${item.city.slug}`) ?? []),
+  ]);
   redirect("/admin");
 }
 
@@ -573,7 +605,10 @@ export async function updateInboxStatus(formData: FormData) {
           where: { id: claim.listingId },
           data: { founding: true, foundingAt: new Date() },
         });
-        revalidatePublic();
+        revalidatePublic([
+          `/l/${claim.listing.slug}`,
+          ...claim.listing.cities.map((item) => `/cities/${item.city.slug}`),
+        ]);
       }
     }
   }

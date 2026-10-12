@@ -66,6 +66,8 @@ Seed data uses **@example.com** addresses only and includes 20 published contrac
 | `DIRECT_URL` | Direct `db.prisma.io` URL for `prisma migrate deploy`. If unset, `npm run db:deploy` and `npm run build` fall back to `DATABASE_URL`. Set this whenever `DATABASE_URL` is the pooled host. |
 | `ADMIN_PASSWORD` | **Required** in production. Shared password for `/admin` |
 | `NEXT_PUBLIC_SITE_URL` | **Required for production SEO.** Canonical origin for metadataBase, canonical/OG URLs, `robots.txt` Sitemap, and sitemap `<loc>`s. Set to `https://belowgradepros.com` on Vercel Production. |
+| `REVALIDATE_SECRET` | Optional. Shared secret for `POST /api/revalidate` (header `REVALIDATE_SECRET`). Admin saves also call `revalidatePath` in-process. |
+| `SITE_URL` | Optional. Origin the CSV importer POSTs to after a non-dry-run (`${SITE_URL}/api/revalidate`) when `REVALIDATE_SECRET` is set. |
 | `STRIPE_PAYMENT_LINK` | Optional. Kept for later billing. Not used by `/founding` or `/claim`. |
 | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | Optional. Build-time fallback for the same link. Not shown in the founding or claim flow. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional. Placeholder for a future Checkout session |
@@ -91,6 +93,8 @@ Set these project environment variables (Production, and Preview if you want tho
 | `DIRECT_URL` | Yes, if `DATABASE_URL` is pooled | Direct TCP for migrations: `postgres://USER:PASSWORD@db.prisma.io:5432/postgres?sslmode=require` (same user and password). `directUrl` in `prisma/schema.prisma`. If this is unset, `npm run db:deploy` falls back to `DATABASE_URL` — only safe while that value is still the direct host. |
 | `ADMIN_PASSWORD` | Yes | Shared `/admin` password |
 | `NEXT_PUBLIC_SITE_URL` | **Yes (Production SEO)** | `https://belowgradepros.com`. Set this on the Vercel **Production** environment (and Preview if you want previews to share the same canonical). Do **not** point it at a `*.vercel.app` deployment URL. If unset on Production, the app still uses `https://belowgradepros.com` and **never** `VERCEL_URL`. Preview deploys may fall back to `VERCEL_URL` only when this var is unset. |
+| `REVALIDATE_SECRET` | No | Guards `POST /api/revalidate`. The importer sends it as the `REVALIDATE_SECRET` header when purging `/`, `/sitemap.xml`, and affected `/cities/*` and `/l/*` paths. |
+| `SITE_URL` | No | Absolute origin for that importer POST, such as `https://belowgradepros.com`. Skipped when unset. |
 | `STRIPE_PAYMENT_LINK` | No | Kept for later billing. Not shown on `/founding` or `/claim`. |
 | `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` | No | Build-time fallback for the same link. Inlined, so a redeploy is required, and it is ignored when `STRIPE_PAYMENT_LINK` is set. |
 | `RESEND_API_KEY` | No | Lead alert email. Without this and without SMTP, alerts are skipped. |
@@ -98,7 +102,7 @@ Set these project environment variables (Production, and Preview if you want tho
 | `LEAD_ALERT_FROM` | No | Resend from-address. Default `BelowGradePros <hello@belowgradepros.com>`. |
 | `SMTP_USER` + `SMTP_PASS` | No | Gmail (or `SMTP_HOST` / `SMTP_PORT`) when Resend is unset. |
 
-Build already runs `prisma generate && next build`. Database pages are `force-dynamic`, so Next does not prerender them at build time. `DATABASE_URL` must still be present so Prisma can generate the client; a missing or invalid database fails at **runtime**, not during compile.
+Build already runs `prisma generate && next build`. Public directory pages (`/`, `/cities`, `/cities/[slug]`, `/l/[slug]`, sitemap, robots) use ISR (`revalidate = 86400`). `generateStaticParams` returns `[]` when the database is unreachable so those dynamic routes render on demand instead of failing the build. `/claim` and `/admin` stay dynamic. `DATABASE_URL` must still be present so Prisma can generate the client.
 
 This repo does **not** create the Vercel project or DNS. Document env only.
 
