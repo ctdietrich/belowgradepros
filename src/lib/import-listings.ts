@@ -3,7 +3,7 @@
  * and the authenticated admin upload at `/admin/import`.
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   normalizeAdditionalService,
   normalizePrimaryService,
@@ -61,6 +61,8 @@ export type ImportResult = {
   errors: string[];
   warnings: string[];
   total: number;
+  /** Public paths to revalidate. Empty on dry-run. */
+  paths: string[];
 };
 
 const NAME_KEYS = ["name", "listing", "listing_name", "business", "business_name", "title", "operator", "contractor"];
@@ -469,6 +471,15 @@ export function mapRow(row: Record<string, string>, index: number): MappedListin
 
 type CityRecord = { id: string; slug: string; name: string };
 
+type PendingCity = {
+  slug: string;
+  name: string;
+  state: string;
+  region: string;
+  description: string;
+  sortOrder: number;
+};
+
 export function matchCity(name: string, cities: CityRecord[]): CityRecord | undefined {
   const raw = name.trim();
   if (!raw) return undefined;
@@ -492,13 +503,14 @@ export function matchCity(name: string, cities: CityRecord[]): CityRecord | unde
   });
 }
 
-async function resolveCity(
-  prisma: PrismaClient | null,
+function planCity(
   cache: CityRecord[],
+  pending: PendingCity[],
   listing: MappedListing,
   name: string,
   createCities: boolean,
   dryRun: boolean,
+  hasPrisma: boolean,
 ) {
   const existing = matchCity(name, cache);
   if (existing) return existing;
@@ -507,7 +519,7 @@ async function resolveCity(
   const slug = CITY_ALIASES[normalizePlace(name)] || slugify(name);
   const already = cache.find((city) => city.slug === slug);
   if (already) return already;
-  if (dryRun || !prisma) {
+  if (dryRun || !hasPrisma) {
     const preview = {
       id: `dry-${slug}`,
       slug,
@@ -517,19 +529,53 @@ async function resolveCity(
     return preview;
   }
 
-  const created = await prisma.city.create({
-    data: {
-      slug,
-      name,
-      state: listing.homeState || "US",
-      region: listing.region || listing.homeState || name,
-      description: `${name} — added from listing import.`,
-      sortOrder: 99,
-    },
-    select: { id: true, slug: true, name: true },
+  pending.push({
+    slug,
+    name,
+    state: listing.homeState || "US",
+    region: listing.region || listing.homeState || name,
+    description: `${name} — added from listing import.`,
+    sortOrder: 99,
   });
-  cache.push(created);
-  return created;
+  const placeholder: CityRecord = { id: `pending:${slug}`, slug, name };
+  cache.push(placeholder);
+  return placeholder;
+}
+
+function uniqueCityIds(cities: CityRecord[]) {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const city of cities) {
+    if (seen.has(city.id)) continue;
+    seen.add(city.id);
+    ids.push(city.id);
+  }
+  return ids;
+}
+
+type IndexedListing = {
+  id: string;
+  slug: string;
+  name: string;
+  citySlugs: string[];
+  pendingCreate?: CreateWork;
+};
+
+type CreateWork = {
+  data: Prisma.ListingCreateManyInput;
+  cityRefs: CityRecord[];
+};
+
+type UpdateWork = {
+  id: string;
+  slug: string;
+  fields: ReturnType<typeof listingFields>;
+  cityRefs: CityRecord[];
+};
+
+function citySlugsOf(listing: { cities?: { city: { slug: string } }[] | null }) {
+  if (!Array.isArray(listing.cities)) return [];
+  return listing.cities.map((item) => item.city.slug);
 }
 
 function listingFields(listing: MappedListing) {
@@ -577,11 +623,63 @@ export async function importListingsFromCsv(
   const skipped: string[] = [];
   const errors: string[] = [];
   const warnings: string[] = [];
+  const touchedListings = new Set<string>();
+  const touchedCities = new Set<string>();
 
   const cities =
     dryRun && !prisma
       ? []
       : await prisma!.city.findMany({ select: { id: true, slug: true, name: true } });
+  const pendingCities: PendingCity[] = [];
+
+  const existingListings =
+    dryRun && !prisma
+      ? []
+      : await prisma!.listing.findMany({
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            cities: { select: { city: { select: { slug: true } } } },
+          },
+        });
+
+  const bySlug = new Map<string, IndexedListing>();
+  const byName = new Map<string, IndexedListing>();
+  for (const listing of existingListings) {
+    const indexed: IndexedListing = {
+      id: listing.id,
+      slug: listing.slug,
+      name: listing.name,
+      citySlugs: citySlugsOf(listing),
+    };
+    bySlug.set(listing.slug, indexed);
+    byName.set(listing.name.toLowerCase(), indexed);
+  }
+
+  const writeOrder: Array<{ kind: "create"; work: CreateWork } | { kind: "update"; work: UpdateWork }> = [];
+
+  const remember = (listingSlug: string, citySlugs: string[]) => {
+    if (dryRun) return;
+    touchedListings.add(listingSlug);
+    for (const slug of citySlugs) touchedCities.add(slug);
+  };
+
+  const reindex = (indexed: IndexedListing, nextSlug: string, nextName: string, nextCitySlugs: string[]) => {
+    if (indexed.slug !== nextSlug) {
+      bySlug.delete(indexed.slug);
+      indexed.slug = nextSlug;
+      bySlug.set(nextSlug, indexed);
+    }
+    const previousName = indexed.name.toLowerCase();
+    const nextNameKey = nextName.toLowerCase();
+    if (previousName !== nextNameKey && byName.get(previousName) === indexed) {
+      byName.delete(previousName);
+    }
+    indexed.name = nextName;
+    byName.set(nextNameKey, indexed);
+    indexed.citySlugs = nextCitySlugs;
+  };
 
   for (let index = 0; index < rows.length; index += 1) {
     const mapped = mapRow(rows[index], index);
@@ -591,30 +689,19 @@ export async function importListingsFromCsv(
     }
     warnings.push(...mapped.warnings);
 
-    const cityIds: string[] = [];
+    const cityRefs: CityRecord[] = [];
     for (const cityName of mapped.cityNames) {
-      const city = await resolveCity(prisma, cities, mapped, cityName, createCities, dryRun);
+      const city = planCity(cities, pendingCities, mapped, cityName, createCities, dryRun, Boolean(prisma));
       if (!city) {
         errors.push(`Row "${mapped.name}": unknown metro "${cityName}"`);
         continue;
       }
-      cityIds.push(city.id);
+      cityRefs.push(city);
     }
 
-    if (mapped.cityNames.length && !cityIds.length) continue;
+    if (mapped.cityNames.length && !cityRefs.length) continue;
 
-    const existing =
-      dryRun && !prisma
-        ? null
-        : await prisma!.listing.findFirst({
-            where: {
-              OR: [
-                { slug: mapped.slug },
-                { name: { equals: mapped.name, mode: "insensitive" } },
-              ],
-            },
-            select: { id: true, slug: true, name: true },
-          });
+    const existing = bySlug.get(mapped.slug) ?? byName.get(mapped.name.toLowerCase()) ?? null;
 
     if (existing && insertOnly) {
       skipped.push(`${mapped.name} (${existing.slug})`);
@@ -631,43 +718,140 @@ export async function importListingsFromCsv(
       continue;
     }
 
-    const uniqueCityIds = [...new Set(cityIds)];
-    if (existing) {
-      // Leave claimable untouched. CSV claimable=no is not an owner claim.
-      await prisma!.listing.update({
-        where: { id: existing.id },
-        data: {
-          ...listingFields(mapped),
-          slug: mapped.slugFromCsv ? mapped.slug : existing.slug,
-          cities: {
-            deleteMany: {},
-            create: uniqueCityIds.map((cityId) => ({ cityId })),
-          },
-        },
-      });
+    const nextCitySlugs = cityRefs.map((city) => city.slug);
+    if (existing?.pendingCreate) {
+      const nextSlug = mapped.slugFromCsv ? mapped.slug : existing.slug;
+      existing.pendingCreate.data = {
+        ...listingFields(mapped),
+        claimable: true,
+        slug: nextSlug,
+      };
+      existing.pendingCreate.cityRefs = cityRefs;
+      reindex(existing, nextSlug, mapped.name, nextCitySlugs);
+      remember(nextSlug, [...existing.citySlugs]);
       updated.push(mapped.name);
-    } else {
-      let slug = mapped.slug;
-      let suffix = 2;
-      while (await prisma!.listing.findUnique({ where: { slug }, select: { id: true } })) {
-        slug = `${mapped.slug}-${suffix}`;
-        suffix += 1;
-      }
-      await prisma!.listing.create({
-        data: {
-          ...listingFields(mapped),
-          claimable: true,
-          slug,
-          cities: {
-            create: uniqueCityIds.map((cityId) => ({ cityId })),
-          },
+      continue;
+    }
+
+    if (existing) {
+      const nextSlug = mapped.slugFromCsv ? mapped.slug : existing.slug;
+      const previousSlug = existing.slug;
+      const previousCities = existing.citySlugs;
+      writeOrder.push({
+        kind: "update",
+        work: {
+          id: existing.id,
+          slug: nextSlug,
+          fields: listingFields(mapped),
+          cityRefs,
         },
       });
-      created.push(mapped.name);
+      reindex(existing, nextSlug, mapped.name, nextCitySlugs);
+      remember(previousSlug, previousCities);
+      remember(nextSlug, nextCitySlugs);
+      updated.push(mapped.name);
+      continue;
     }
+
+    let slug = mapped.slug;
+    let suffix = 2;
+    while (bySlug.has(slug)) {
+      slug = `${mapped.slug}-${suffix}`;
+      suffix += 1;
+    }
+    const work: CreateWork = {
+      data: {
+        ...listingFields(mapped),
+        claimable: true,
+        slug,
+      },
+      cityRefs,
+    };
+    writeOrder.push({ kind: "create", work });
+    const indexed: IndexedListing = {
+      id: `pending:${slug}`,
+      slug,
+      name: mapped.name,
+      citySlugs: nextCitySlugs,
+      pendingCreate: work,
+    };
+    bySlug.set(slug, indexed);
+    byName.set(mapped.name.toLowerCase(), indexed);
+    remember(slug, nextCitySlugs);
+    created.push(mapped.name);
   }
 
-  return { created, updated, skipped, errors, warnings, total: rows.length };
+  if (!dryRun && prisma) {
+    if (pendingCities.length) {
+      const createdCities = await prisma.city.createManyAndReturn({
+        data: pendingCities,
+        select: { id: true, slug: true, name: true },
+      });
+      const createdBySlug = new Map(createdCities.map((city) => [city.slug, city]));
+      for (const city of cities) {
+        if (!city.id.startsWith("pending:")) continue;
+        const real = createdBySlug.get(city.slug);
+        if (!real) throw new Error(`Import created city "${city.slug}" but did not receive an id.`);
+        city.id = real.id;
+      }
+    }
+
+    let createBatch: CreateWork[] = [];
+    const flushCreates = async () => {
+      if (!createBatch.length) return;
+      const batch = createBatch;
+      createBatch = [];
+      const createdRows = await prisma.listing.createManyAndReturn({
+        data: batch.map((item) => item.data),
+        select: { id: true, slug: true },
+      });
+      const idBySlug = new Map(createdRows.map((row) => [row.slug, row.id]));
+      const links: { listingId: string; cityId: string }[] = [];
+      for (const item of batch) {
+        const listingId = idBySlug.get(String(item.data.slug));
+        if (!listingId) {
+          throw new Error(`Import created listing but did not receive an id for slug "${String(item.data.slug)}".`);
+        }
+        for (const cityId of uniqueCityIds(item.cityRefs)) {
+          links.push({ listingId, cityId });
+        }
+      }
+      if (links.length) await prisma.listingCity.createMany({ data: links });
+    };
+
+    for (const op of writeOrder) {
+      if (op.kind === "create") {
+        createBatch.push(op.work);
+        continue;
+      }
+      await flushCreates();
+      // Leave claimable untouched. CSV claimable=no is not an owner claim.
+      await prisma.listing.update({
+        where: { id: op.work.id },
+        data: {
+          ...op.work.fields,
+          slug: op.work.slug,
+          cities: {
+            deleteMany: {},
+            create: uniqueCityIds(op.work.cityRefs).map((cityId) => ({ cityId })),
+          },
+        },
+      });
+    }
+    await flushCreates();
+  }
+
+  const paths = dryRun
+    ? []
+    : [
+        "/",
+        "/sitemap.xml",
+        "/cities",
+        ...[...touchedCities].map((slug) => `/cities/${slug}`),
+        ...[...touchedListings].map((slug) => `/l/${slug}`),
+      ];
+
+  return { created, updated, skipped, errors, warnings, total: rows.length, paths };
 }
 
 export function isCsvUpload(file: { name: string; type: string }) {
