@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { additionalServiceLabel, listingPath, primaryServiceLabel, typeLabel } from "@/lib/config";
-import { listingBadges, listingCover, type ListingWithCities } from "@/lib/listings";
+import { listingBadges, listingCover } from "@/lib/listing-fields";
+import type { ListingWithCities } from "@/lib/listings";
 
 export function ListingCard({ listing }: { listing: ListingWithCities }) {
   const cover = listingCover(listing);

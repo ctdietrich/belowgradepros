@@ -1,6 +1,7 @@
+import { cache } from "react";
 import type { City, Listing, Prisma } from "@prisma/client";
-import { matchesPrimaryFilter, normalizeAdditionalService } from "./config";
 import { catalogCityFallback, getWave1Hub } from "./hubs";
+import { listingMatchesServiceFilter } from "./listing-fields";
 import { publishedListingWhere } from "./listing-status";
 import { prisma } from "./prisma";
 
@@ -8,37 +9,13 @@ export type ListingWithCities = Listing & {
   cities: { city: City }[];
 };
 
-export function asStringArray(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value) as unknown;
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => typeof item === "string");
-      }
-    } catch {
-      return value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
-  }
-  return [];
-}
-
-export function listingCover(listing: Pick<Listing, "photos">) {
-  return asStringArray(listing.photos)[0] ?? null;
-}
-
-export function listingBadges(listing: Pick<Listing, "services">) {
-  return asStringArray(listing.services);
-}
-
-export function listingServices(listing: Pick<Listing, "services">) {
-  return listingBadges(listing);
-}
+export {
+  asStringArray,
+  listingBadges,
+  listingCover,
+  listingMatchesServiceFilter,
+  listingServices,
+} from "./listing-fields";
 
 /** Public mailto / JSON-LD email. Blank and @example.com placeholders stay hidden. */
 export function publicContactEmail(email: string | null | undefined): string | null {
@@ -83,20 +60,15 @@ export async function getPublishedListings(filters?: {
 
   if (!filters?.service) return listings;
 
-  return listings.filter((listing) => {
-    if (matchesPrimaryFilter(listing.primaryService, filters.service)) return true;
-    const badge = normalizeAdditionalService(filters.service ?? "");
-    if (!badge) return false;
-    return listingBadges(listing).some((item) => normalizeAdditionalService(item) === badge);
-  });
+  return listings.filter((listing) => listingMatchesServiceFilter(listing, filters.service));
 }
 
-export async function getListingBySlug(slug: string, includeDraft = false) {
+export const getListingBySlug = cache(async (slug: string, includeDraft = false) => {
   return prisma.listing.findFirst({
     where: includeDraft ? { slug } : { slug, ...published },
     include: { cities: { include: { city: true } } },
   });
-}
+});
 
 /** Published listing with founding=true. Drafts and non-founding profiles never match. */
 export async function getFoundingBadgeListing(slug: string) {
@@ -108,7 +80,7 @@ export async function getFoundingBadgeListing(slug: string) {
   });
 }
 
-export async function getCities() {
+export const getCities = cache(async () => {
   return prisma.city.findMany({
     include: {
       listings: {
@@ -118,25 +90,59 @@ export async function getCities() {
     },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
-}
+});
 
-export async function getCityBySlug(slug: string) {
-  const city = await prisma.city.findUnique({
-    where: { slug },
-    include: {
-      listings: {
-        where: { listing: published },
-        include: { listing: true },
+export type CitySummary = {
+  id: string;
+  slug: string;
+  name: string;
+  state: string;
+  region: string;
+  heroImage: string | null;
+  description: string;
+  count: number;
+};
+
+/** Card fields plus a published-listing count. Does not load listing rows. */
+export const getCitySummaries = cache(async (): Promise<CitySummary[]> => {
+  const cities = await prisma.city.findMany({
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      state: true,
+      region: true,
+      heroImage: true,
+      description: true,
+      _count: {
+        select: {
+          listings: { where: { listing: published } },
+        },
       },
     },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
   });
+  return cities.map((city) => ({
+    id: city.id,
+    slug: city.slug,
+    name: city.name,
+    state: city.state,
+    region: city.region,
+    heroImage: city.heroImage,
+    description: city.description,
+    count: city._count.listings,
+  }));
+});
+
+export const getCityBySlug = cache(async (slug: string) => {
+  const city = await prisma.city.findUnique({ where: { slug } });
   const hub = getWave1Hub(slug);
   if (city) {
     if (!hub) return city;
     return { ...city, name: hub.name, description: hub.description };
   }
   return catalogCityFallback(slug);
-}
+});
 
 export async function getClaimableListings() {
   return prisma.listing.findMany({

@@ -3,18 +3,21 @@ import { absoluteUrl, cityPath, listingPath } from "@/lib/config";
 import { publicGuidePaths } from "@/lib/cost-paths";
 import { WAVE1_HUB_SLUGS } from "@/lib/hubs";
 import { publishedListingWhere } from "@/lib/listing-status";
+import { withOnDemandFallback } from "@/lib/on-demand";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [listings, cities] = await Promise.all([
-    prisma.listing.findMany({
-      where: publishedListingWhere,
-      select: { slug: true, updatedAt: true },
-    }),
-    prisma.city.findMany({ select: { slug: true } }),
-  ]);
+  const [listings, cities] = await withOnDemandFallback(() =>
+    Promise.all([
+      prisma.listing.findMany({
+        where: publishedListingWhere,
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.city.findMany({ select: { slug: true } }),
+    ]),
+  );
 
   const staticRoutes = [
     "",

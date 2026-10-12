@@ -15,9 +15,10 @@ import {
   site,
 } from "@/lib/config";
 import { organizationJsonLd } from "@/lib/jsonld";
-import { getCities, getPublishedListings } from "@/lib/listings";
+import { getCitySummaries, getPublishedListings } from "@/lib/listings";
+import { withOnDemandFallback } from "@/lib/on-demand";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: {
@@ -33,10 +34,9 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [featured, cities] = await Promise.all([
-    getPublishedListings({ featured: true }),
-    getCities(),
-  ]);
+  const [featured, cities] = await withOnDemandFallback(() =>
+    Promise.all([getPublishedListings({ featured: true }), getCitySummaries()]),
+  );
   const strip = buildHomepageStrip(cities);
 
   return (

@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { saveListing, type ActionState } from "@/app/actions";
 import { site } from "@/lib/config";
-import { asStringArray } from "@/lib/listings";
+import { asStringArray } from "@/lib/listing-fields";
 import type { City, Listing } from "@prisma/client";
 
 const field =

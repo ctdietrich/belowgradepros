@@ -522,7 +522,14 @@ type HomepageStripCity = {
   region: string;
   heroImage?: string | null;
   listings?: unknown[];
+  count?: number;
 };
+
+function cityListingCount(city?: { listings?: unknown[]; count?: number } | null) {
+  if (!city) return 0;
+  if (typeof city.count === "number") return city.count;
+  return city.listings?.length ?? 0;
+}
 
 /** Order DB cities by the explicit homepage strip; fall back to hub metadata if a row is missing. */
 export function buildHomepageStrip(cities: HomepageStripCity[]) {
@@ -536,7 +543,7 @@ export function buildHomepageStrip(cities: HomepageStripCity[]) {
       state: city?.state ?? hub?.state ?? "",
       region: city?.region ?? hub?.region ?? "",
       heroImage: city?.heroImage ?? null,
-      count: city?.listings?.length ?? 0,
+      count: cityListingCount(city),
     };
   });
 }
@@ -559,7 +566,7 @@ export function buildCityIndex(cities: CityIndexRow[]) {
       region: city?.region ?? hub.region,
       heroImage: city?.heroImage ?? null,
       listings: city?.listings ?? [],
-      count: city?.listings?.length ?? 0,
+      count: cityListingCount(city),
     };
   });
   const extras = cities
@@ -572,7 +579,7 @@ export function buildCityIndex(cities: CityIndexRow[]) {
       region: city.region,
       heroImage: city.heroImage ?? null,
       listings: city.listings ?? [],
-      count: city.listings?.length ?? 0,
+      count: cityListingCount(city),
     }));
   return [...wave1, ...extras];
 }

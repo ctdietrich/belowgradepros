@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CityCard } from "@/components/CityCard";
-import { EmptyListings } from "@/components/EmptyListings";
+import { CityHubListings, CityHubListingsFromQuery } from "@/components/CityHubListings";
 import { HubDensifySection } from "@/components/HubDensifySection";
 import { JsonLd } from "@/components/JsonLd";
-import { ListingCard } from "@/components/ListingCard";
-import { PageHero } from "@/components/PageHero";
-import {
-  cityPath,
-  normalizeHubServiceQuery,
-  site,
-} from "@/lib/config";
-import { encapsulationCostPath, foundationCostPath, isCostMetro } from "@/lib/cost-paths";
+import { cityPath } from "@/lib/config";
 import { foundingSpotsLabel, foundingSpotsLeft } from "@/lib/founding";
-import { getHubDensify } from "@/lib/hub-densify";
+import { getHubDensify, type HubDensify } from "@/lib/hub-densify";
 import {
   buildCityIndex,
   catalogCardChips,
@@ -22,30 +15,74 @@ import {
   catalogCardHref,
   getWave1Hub,
   hubPageDescription,
-  hubPageHeading,
   hubPageTitle,
   hubPlaceLabel,
 } from "@/lib/hubs";
 import { cityJsonLd, hubDensifyFaqJsonLd } from "@/lib/jsonld";
-import { getCities, getCityBySlug, getPublishedListings } from "@/lib/listings";
+import { getCityBySlug, getCitySummaries, getPublishedListings } from "@/lib/listings";
+import { withOnDemandFallback } from "@/lib/on-demand";
+import { cityStaticParams } from "@/lib/static-params";
 
-export const dynamic = "force-dynamic";
+type RelatedCity = {
+  id: string;
+  slug: string;
+  name: string;
+  state: string;
+  region: string;
+  heroImage: string | null;
+  count: number;
+};
+
+function RelatedHubs({
+  densify,
+  others,
+}: {
+  densify: HubDensify | null;
+  others: RelatedCity[];
+}) {
+  return (
+    <>
+      {densify ? <HubDensifySection densify={densify} /> : null}
+      <h2 className="mt-16 font-display text-2xl text-slate">
+        {densify ? "Related hubs" : "Other hubs"}
+      </h2>
+      <div className="mt-6 grid gap-5 md:grid-cols-3">
+        {others.map((item) => (
+          <CityCard
+            key={item.id}
+            slug={item.slug}
+            name={item.name}
+            state={item.state}
+            region={item.region}
+            heroImage={item.heroImage}
+            count={item.count}
+            href={catalogCardHref(item.slug)}
+            cta={catalogCardCta(item.slug)}
+            chips={catalogCardChips(item.slug)}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return cityStaticParams();
+}
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ service?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const { service } = await searchParams;
-  const city = await getCityBySlug(slug);
+  const city = await withOnDemandFallback(() => getCityBySlug(slug));
   if (!city) return { title: "City" };
-  const filter = normalizeHubServiceQuery(service);
-  const title = hubPageTitle(city.slug, filter, city);
   return {
-    title,
+    title: hubPageTitle(city.slug, null, city),
     description: hubPageDescription(city.slug, city.description),
     alternates: { canonical: cityPath(city.slug) },
   };
@@ -53,22 +90,21 @@ export async function generateMetadata({
 
 export default async function CityDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ service?: string }>;
 }) {
   const { slug } = await params;
-  const { service } = await searchParams;
-  const city = await getCityBySlug(slug);
+  const city = await withOnDemandFallback(() => getCityBySlug(slug));
   if (!city) notFound();
 
-  const serviceFilter = normalizeHubServiceQuery(service);
-  const listings = await getPublishedListings({
-    citySlug: city.slug,
-    service: serviceFilter ?? undefined,
-  });
-  const index = buildCityIndex(await getCities());
+  const [listings, summaries, spotsLeft] = await withOnDemandFallback(() =>
+    Promise.all([
+      getPublishedListings({ citySlug: city.slug }),
+      getCitySummaries(),
+      foundingSpotsLeft(city.slug),
+    ]),
+  );
+  const index = buildCityIndex(summaries);
   const densify = getHubDensify(city.slug);
   const relatedFromDensify = densify
     ? densify.related
@@ -92,102 +128,31 @@ export default async function CityDetailPage({
     relatedFromDensify.length > 0
       ? relatedFromDensify
       : index.filter((item) => item.slug !== city.slug).slice(0, 3);
-  const heading = hubPageHeading(city.slug, serviceFilter, city);
-  const spotsLeft = await foundingSpotsLeft(city.slug);
+
+  const view = {
+    slug: city.slug,
+    name: city.name,
+    state: city.state,
+    region: city.region,
+    description: city.description,
+  };
+  const spotsLabel = foundingSpotsLabel(spotsLeft);
 
   return (
     <main>
       <JsonLd data={cityJsonLd({ ...city, description: hubPageDescription(city.slug, city.description) })} />
       {densify ? <JsonLd data={hubDensifyFaqJsonLd(densify)} /> : null}
-      <PageHero
-        kicker={`${city.region} · ${city.state}`}
-        title={heading}
-        lede={hubPageDescription(city.slug, city.description)}
-      />
-      <section className="mx-auto max-w-6xl px-5 py-12">
-        <p className="mb-6 text-sm">
-          <Link href="/founding" className="font-medium text-amber-deep hover:underline">
-            {foundingSpotsLabel(spotsLeft)}
-          </Link>
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={cityPath(city.slug)}
-            className={`rounded-full px-3 py-1.5 text-sm ${
-              !serviceFilter ? "bg-slate text-page" : "border border-slate/15 text-slate-soft"
-            }`}
-          >
-            All
-          </Link>
-          {site.primaryServices
-            .filter((item) => item.key !== "both")
-            .map((item) => (
-              <Link
-                key={item.query}
-                href={cityPath(city.slug, item.query)}
-                className={`rounded-full px-3 py-1.5 text-sm ${
-                  serviceFilter === item.key
-                    ? "bg-slate text-page"
-                    : "border border-slate/15 text-slate-soft"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-        </div>
-        {isCostMetro(city.slug) ? (
-          <p className="mt-6 text-sm text-slate-soft">
-            <span className="font-medium text-slate">
-              What does it cost in {getWave1Hub(city.slug)?.name ?? city.name}?
-            </span>{" "}
-            <Link href={encapsulationCostPath(city.slug)} className="text-amber-deep hover:underline">
-              Crawl space encapsulation
-            </Link>
-            <span aria-hidden="true"> · </span>
-            <Link href={foundationCostPath(city.slug)} className="text-amber-deep hover:underline">
-              Foundation repair
-            </Link>
-          </p>
-        ) : null}
-        <h2 className="mt-8 font-display text-3xl text-slate">Contractors</h2>
-        {listings.length ? (
-          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-8">
-            <EmptyListings
-              message={
-                serviceFilter
-                  ? "No listings match — try another filter or browse every contractor in this metro."
-                  : "No published contractors in this metro yet. Try another city or check back as profiles are added."
-              }
-            />
-          </div>
-        )}
-        {densify ? <HubDensifySection densify={densify} /> : null}
-        <h2 className="mt-16 font-display text-2xl text-slate">
-          {densify ? "Related hubs" : "Other hubs"}
-        </h2>
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
-          {others.map((item) => (
-            <CityCard
-              key={item.id}
-              slug={item.slug}
-              name={item.name}
-              state={item.state}
-              region={item.region}
-              heroImage={item.heroImage}
-              count={item.count}
-              href={catalogCardHref(item.slug)}
-              cta={catalogCardCta(item.slug)}
-              chips={catalogCardChips(item.slug)}
-            />
-          ))}
-        </div>
-      </section>
+      <Suspense
+        fallback={
+          <CityHubListings city={view} listings={listings} spotsLabel={spotsLabel} serviceFilter={null}>
+            <RelatedHubs densify={densify} others={others} />
+          </CityHubListings>
+        }
+      >
+        <CityHubListingsFromQuery city={view} listings={listings} spotsLabel={spotsLabel}>
+          <RelatedHubs densify={densify} others={others} />
+        </CityHubListingsFromQuery>
+      </Suspense>
     </main>
   );
 }
