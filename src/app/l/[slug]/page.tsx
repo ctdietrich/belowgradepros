@@ -14,9 +14,16 @@ import {
 } from "@/lib/config";
 import { listingJsonLd } from "@/lib/jsonld";
 import { asStringArray, getListingBySlug, listingBadges, publicContactEmail } from "@/lib/listings";
+import { withOnDemandFallback } from "@/lib/on-demand";
+import { listingStaticParams } from "@/lib/static-params";
 import { websiteLinkRel } from "@/lib/website-rel";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  return listingStaticParams();
+}
 
 export async function generateMetadata({
   params,
@@ -24,7 +31,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const listing = await getListingBySlug(slug);
+  const listing = await withOnDemandFallback(() => getListingBySlug(slug));
   if (!listing) return { title: "Contractor" };
   return {
     title: listing.name,
@@ -39,7 +46,7 @@ export default async function ListingPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const listing = await getListingBySlug(slug);
+  const listing = await withOnDemandFallback(() => getListingBySlug(slug));
   if (!listing) notFound();
 
   const photos = asStringArray(listing.photos);

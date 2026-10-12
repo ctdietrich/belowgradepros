@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { CityCard } from "@/components/CityCard";
 import { PageHero } from "@/components/PageHero";
 import { buildCityIndex, catalogCardChips, catalogCardCta, catalogCardHref } from "@/lib/hubs";
-import { getCities } from "@/lib/listings";
+import { getCitySummaries } from "@/lib/listings";
+import { withOnDemandFallback } from "@/lib/on-demand";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: "Cities we cover",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CitiesPage() {
-  const cities = buildCityIndex(await getCities());
+  const cities = buildCityIndex(await withOnDemandFallback(() => getCitySummaries()));
 
   return (
     <main>

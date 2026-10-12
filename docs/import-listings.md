@@ -32,6 +32,8 @@ npm run import:listings -- /absolute/path/to/hero.csv
 
 Then confirm on the public site and `/admin`. Prefer **`/admin/import`** for production so `DATABASE_URL` never leaves Vercel.
 
+A non-dry-run import POSTs `{ paths }` to `${SITE_URL}/api/revalidate` when `REVALIDATE_SECRET` is set. The header name is `REVALIDATE_SECRET`. Paths are `/`, `/sitemap.xml`, `/cities`, and the affected `/cities/*` and `/l/*` URLs. Admin import and listing edits call `revalidatePath` for the same set inside the app.
+
 ## Expected columns
 
 See [`data/hero-seed.sample.csv`](../data/hero-seed.sample.csv) for a complete header row. Headers are matched **case-insensitively**; spaces and hyphens become underscores (`Source URL` → `source_url`).

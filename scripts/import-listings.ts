@@ -102,6 +102,9 @@ Options:
   --self-test               Run built-in mapping tests
   --help                    Show this message
 
+When REVALIDATE_SECRET and SITE_URL are set, a non-dry-run import POSTs
+{ paths } to SITE_URL/api/revalidate with the REVALIDATE_SECRET header.
+
 Ops statuses candidate, qa_pass, ready, review, and pending stay draft.
 Only publish / published / live / approved / active / hero go live.
 Do not run npm run seed against production after an import (seed wipes listings).
@@ -545,6 +548,39 @@ Alias Contractor\tcontractor\tDFW\tFoundation repair; Slab\tREADY
   console.log("import-listings self-test: ok");
 }
 
+export async function postRevalidate(paths: string[]) {
+  const secret = process.env.REVALIDATE_SECRET?.trim();
+  if (!secret) return;
+  const siteUrl = process.env.SITE_URL?.trim().replace(/\/$/, "");
+  if (!siteUrl) {
+    console.warn("REVALIDATE_SECRET is set but SITE_URL is missing; skipped cache revalidation.");
+    return;
+  }
+  const unique = [...new Set(paths)].filter((path) => path.startsWith("/"));
+  if (!unique.length) return;
+  try {
+    const response = await fetch(`${siteUrl}/api/revalidate`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        REVALIDATE_SECRET: secret,
+      },
+      body: JSON.stringify({ paths: unique }),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`Revalidate failed (${response.status}): ${text}`);
+      return;
+    }
+    console.log(`Revalidated ${unique.length} paths.`);
+  } catch (error) {
+    console.error(
+      "Revalidate request failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
 async function main() {
   loadDotEnv();
   let flags: ImportFlags;
@@ -568,6 +604,7 @@ async function main() {
 
   const result = await importListings(flags.file, flags);
   console.log(summarizeImport(result, Boolean(flags.dryRun)));
+  if (!flags.dryRun) await postRevalidate(result.paths);
   if (result.warnings.length) {
     console.log("Warnings:");
     for (const warning of result.warnings) console.log(`  - ${warning}`);
